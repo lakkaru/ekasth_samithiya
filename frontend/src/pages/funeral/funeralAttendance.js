@@ -45,7 +45,7 @@ export default function FuneralAttendance() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [hasChanges, setHasChanges] = useState(false)
-  
+
   // Fine settings
   const [fineSettings, setFineSettings] = useState({
     funeralAttendanceFine: 100,
@@ -76,7 +76,7 @@ export default function FuneralAttendance() {
       }
     }
     loadFineSettings()
-    
+
     // Fetch available funerals
     fetchAvailableFunerals()
   }, [isAuthenticated, roles])
@@ -108,7 +108,7 @@ export default function FuneralAttendance() {
       setCurrentFuneral(funeral)
       setOriginalAbsents([...(funeral.eventAbsents || [])])
       setHasChanges(false)
-      
+
       // Load fined members for this funeral
       await loadFinedMembers(funeralId)
     } catch (error) {
@@ -150,7 +150,7 @@ export default function FuneralAttendance() {
     const currentAbsents = absentMemberIds.sort()
     const originalAbsentsSorted = originalAbsents.sort()
     const hasActualChanges = JSON.stringify(currentAbsents) !== JSON.stringify(originalAbsentsSorted)
-    
+
     if (!hasActualChanges) {
       setError("කිසිම වෙනස්කමක් නොමැත")
       return
@@ -159,15 +159,15 @@ export default function FuneralAttendance() {
     setLoading(true)
     setError("")
     setSuccess("")
-    
+
     const absentData = { funeral_id: selectedFuneralId, absentArray: absentMemberIds }
-    
+
     try {
       const response = await api.post(`${baseUrl}/funeral/funeralAbsents`, { absentData })
       const { finesAdded = 0, finesRemoved = 0, excludedFromFines = 0, excludedDueToExistingFines = 0 } = response.data
-      
+
       let successMsg = "අවමංගල්‍ය පැමිණීම සාර්ථකව යාවත්කාලීන කරන ලදී"
-      
+
       if (finesAdded > 0 && finesRemoved > 0) {
         successMsg += ` (දඩ ${finesAdded}ක් එකතු කර ${finesRemoved}ක් ඉවත් කරන ලදී)`
       } else if (finesAdded > 0) {
@@ -175,34 +175,34 @@ export default function FuneralAttendance() {
       } else if (finesRemoved > 0) {
         successMsg += ` (දඩ ${finesRemoved}ක් ඉවත් කරන ලදී)`
       }
-      
+
       if (excludedFromFines > 0) {
         successMsg += ` (වැඩ පැවරුම් සහිත සාමාජිකයන් ${excludedFromFines} දෙනෙකු දඩයෙන් හැර ගන්නා ලදී)`
       }
-      
+
       if (excludedDueToExistingFines > 0) {
         successMsg += ` (දැනටමත් දඩ ඇති සාමාජිකයන් ${excludedDueToExistingFines} දෙනෙකු අමතර දඩයෙන් ගලවා ගන්නා ලදී)`
       }
-      
+
       // Note: Officers from Admin collection are automatically excluded from fines (except auditor)
       // Area admins are only excluded if they are from the same area as the deceased member
-      
+
       setSuccess(successMsg)
       setOriginalAbsents([...absentMemberIds])
       setHasChanges(false)
-      
+
       // Scroll to top to show success message and updated information
       window.scrollTo({ top: 0, behavior: 'smooth' })
-      
+
       // Clear success message after 5 seconds
       setTimeout(() => setSuccess(""), 5000)
-      
+
       // Update current funeral data
       setCurrentFuneral(prev => ({
         ...prev,
         eventAbsents: absentMemberIds
       }))
-      
+
       // Reload fined members to get updated fine status
       await loadFinedMembers(selectedFuneralId)
     } catch (error) {
@@ -232,17 +232,17 @@ export default function FuneralAttendance() {
 
   const getDeceasedName = (funeral) => {
     if (!funeral || !funeral.member_id) return "නොදන්නා"
-    
+
     // If deceased_id matches member_id, it's the member who died
     if (funeral.deceased_id && funeral.deceased_id.toString() === funeral.member_id._id.toString()) {
       return funeral.member_id.name || "නොදන්නා"
     }
-    
+
     // Otherwise, look for the dependent
     const dependent = funeral.member_id.dependents?.find(
       dep => dep._id && dep._id.toString() === funeral.deceased_id?.toString()
     )
-    
+
     return dependent?.name || "නොදන්නා"
   }
 
@@ -257,36 +257,36 @@ export default function FuneralAttendance() {
   }
 
   const calculateFineEligibleAbsents = () => {
-    if (!currentFuneral || !currentFuneral.eventAbsents) return { 
-      count: 0, 
-      totalFine: 0, 
-      totalAbsents: 0, 
+    if (!currentFuneral || !currentFuneral.eventAbsents) return {
+      count: 0,
+      totalFine: 0,
+      totalAbsents: 0,
       excludedCount: 0,
       breakdown: { cemetery: 0, funeral: 0, removed: 0 }
     }
-    
+
     const eventAbsents = currentFuneral.eventAbsents || []
-    
+
     // Get members who should be excluded from fines
     const cemeteryAssignedIds = (currentFuneral.cemeteryAssignments || []).map(assignment => assignment.member_id)
     const funeralAssignedIds = (currentFuneral.funeralAssignments || []).map(assignment => assignment.member_id)
     const removedMemberIds = (currentFuneral.removedMembers || []).map(member => member.member_id)
-    
+
     const excludedFromFines = [
       ...cemeteryAssignedIds,
       ...funeralAssignedIds,
       ...removedMemberIds
     ]
-    
+
     // Count only absent members who are eligible for fines
     const fineEligibleAbsents = eventAbsents.filter(memberId => !excludedFromFines.includes(memberId))
     const fineAmount = fineSettings.funeralAttendanceFine
-    
+
     // Calculate breakdown of excluded members
     const cemeteryExcluded = eventAbsents.filter(memberId => cemeteryAssignedIds.includes(memberId)).length
     const funeralExcluded = eventAbsents.filter(memberId => funeralAssignedIds.includes(memberId)).length
     const removedExcluded = eventAbsents.filter(memberId => removedMemberIds.includes(memberId)).length
-    
+
     return {
       count: fineEligibleAbsents.length,
       totalFine: fineEligibleAbsents.length * fineAmount,
@@ -341,10 +341,10 @@ export default function FuneralAttendance() {
                 ))}
               </Select>
             </FormControl>
-            
+
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button 
-                variant="outlined" 
+              <Button
+                variant="outlined"
                 onClick={resetForm}
                 disabled={loading || !selectedFuneralId}
               >
@@ -408,16 +408,16 @@ export default function FuneralAttendance() {
                     <strong>මුළු දඩ මුදල:</strong> රු. {finedMembers.filter(member => member.fineAmount > 0).reduce((sum, member) => sum + member.fineAmount, 0)}
                   </Typography>
                 </Grid>
-                
+
                 {/* Show fined members if any exist with non-zero fine amounts */}
                 {finedMembers.filter(member => member.fineAmount > 0).length > 0 && (
                   <Grid item xs={12}>
                     <Typography variant="h6" sx={{ mt: 2, mb: 1, color: 'error.main' }}>
                       අවමංගල්‍ය නොපැමිණීම් දඩ ගෙවන සාමාජිකයන් ({finedMembers.filter(member => member.fineAmount > 0).length})
                     </Typography>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      flexWrap: 'wrap', 
+                    <Box sx={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
                       gap: 1,
                       maxHeight: '200px',
                       overflowY: 'auto',
@@ -431,15 +431,15 @@ export default function FuneralAttendance() {
                         .filter(member => member.fineAmount > 0)
                         .sort((a, b) => a.member_id - b.member_id)
                         .map(member => (
-                        <Chip
-                          key={member.member_id}
-                          label={`${member.member_id} (රු.${member.fineAmount})`}
-                          size="small"
-                          color="error"
-                          variant="outlined"
-                          sx={{ fontSize: '0.75rem' }}
-                        />
-                      ))}
+                          <Chip
+                            key={member.member_id}
+                            label={`${member.member_id} (රු.${member.fineAmount})`}
+                            size="small"
+                            color="error"
+                            variant="outlined"
+                            sx={{ fontSize: '0.75rem' }}
+                          />
+                        ))}
                     </Box>
                   </Grid>
                 )}
