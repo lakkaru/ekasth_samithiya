@@ -1,0 +1,132 @@
+const express = require("express");
+// const memberController=require('../controllers/memberController')
+const {
+  getMemberById,
+  getProfileInfo,
+  updateProfileInfo,
+  getMemberHasLoanById,
+  getMyLoan,
+  // getMemberLoanInfo,
+  blacklistDueLoanMembers,
+  getMember,
+  getPayments,
+  getFines,
+  getMemberDueById,
+  getFamily,
+  updateDiedStatus,
+  updateDependentDiedStatus,
+  getActiveMembers,
+  getAdminsForFuneral,
+  getMembershipDeathById,
+  getMemberAllInfoById,
+  getNextId,
+  getMemberIdsForFuneralAttendance,
+  getMembersForFuneralDocument,
+  getMembersForCommonWorkDocument,
+  getMembersForMeetingAttendance,
+  deleteFineById,
+  createMember,
+  getMemberForUpdate,
+  updateMember,
+  deleteMember,
+  searchMembersByArea,
+  searchMembersByName,
+  getAreas,
+  getMembersForCollection,
+  getMembersForCollectionMarking,
+  getMembersStatusPublic,
+} = require("../controllers/memberController");
+const authMiddleware = require("../middleware/authMiddleware");
+
+const router = express.Router();
+
+// Route to get member profile information (requires authentication)
+router.get("/profile", authMiddleware(), getProfileInfo);
+// Route to update member profile information (requires authentication)
+router.put("/profile", authMiddleware(), updateProfileInfo);
+// Route to get  member info (requires authentication)
+router.get("/hasLoan", authMiddleware(), getMemberHasLoanById);
+router.get("/myLoan", authMiddleware(), getMyLoan);
+// router.get("/memberLoan", authMiddleware(), getMemberLoanInfo);
+router.get("/getMemberById/:memberId", authMiddleware(), getMemberById);
+router.get("/info", authMiddleware(), getMember);
+router.get("/payments", authMiddleware(), getPayments);
+router.get("/fines", authMiddleware(), getFines);
+router.get("/due", authMiddleware(), getMemberDueById);
+//for vice-secretory
+router.get(
+  "/getFamily/:member_id",
+  authMiddleware(["vice-secretary"]),
+  getFamily
+);
+router.post(
+  "/updateDiedStatus",
+  authMiddleware(["vice-secretary"]),
+  updateDiedStatus
+);
+router.post(
+  "/updateDependentDiedStatus",
+  authMiddleware(["vice-secretary"]),
+  updateDependentDiedStatus
+);
+router.get(
+  "/getActiveMembers",
+  authMiddleware(["vice-secretary"]),
+  getActiveMembers
+);
+router.get(
+  "/getAdminsForFuneral",
+  authMiddleware(["vice-secretary"]),
+  getAdminsForFuneral
+);
+router.get(
+  "/getMembershipDeathById",
+  authMiddleware(["vice-secretary", "treasurer", "auditor"]),
+  getMembershipDeathById
+);
+router.get(
+  "/getMemberAllInfoById",
+  authMiddleware(["vice-secretary", "treasurer", "loan-treasurer", "auditor"]),
+  getMemberAllInfoById
+);
+router.get("/getNextId", authMiddleware(["vice-secretary"]), getNextId);
+router.get("/getMemberIdsForFuneralAttendance", authMiddleware(["vice-secretary", "treasurer", "auditor"]), getMemberIdsForFuneralAttendance);
+router.get("/getMembersForFuneralDocument", authMiddleware(["vice-secretary", "treasurer", "auditor"]), getMembersForFuneralDocument);
+router.get("/getMembersForCommonWorkDocument", authMiddleware(["vice-secretary"]), getMembersForCommonWorkDocument);
+router.get("/getMembersForMeetingAttendance", authMiddleware(["vice-secretary"]), getMembersForMeetingAttendance);
+router.post("/deleteFine", authMiddleware(["vice-secretary", "treasurer"]), deleteFineById);
+
+//backlist loan overdue members
+router.get("/blacklist", authMiddleware(["loan-treasurer"]), blacklistDueLoanMembers);
+
+// Route to get member id object by member_id (requires authentication)
+// router.get("/_id/:memberId", authMiddleware(), get_id);
+// Route to get member  basic info by member_id(requires authentication)
+
+//getting admins for work assignments
+// router.get("/getAdminsForFuneral", adminController.getAdminsForFuneral);
+// router.get("/get-all-data-by-id",authMiddleware(["vice-secretory"]) , getAllDataById);
+// get-admin-for-
+
+//create member
+router.post("/create", authMiddleware(["vice-secretary"]), createMember);
+//get member for update
+router.get("/get/:member_id", authMiddleware(["vice-secretary"]), getMemberForUpdate);
+//update member
+router.put("/update/:member_id", authMiddleware(["vice-secretary"]), updateMember);
+//delete member
+router.delete("/delete/:member_id", authMiddleware(["vice-secretary"]), deleteMember);
+//search members by area
+router.get("/searchByArea", authMiddleware(["vice-secretary"]), searchMembersByArea);
+//search members by name
+router.get("/searchByName", authMiddleware(["vice-secretary"]), searchMembersByName);
+//get all areas
+router.get("/areas", authMiddleware(["vice-secretary"]), getAreas);
+//get members for collection list
+router.get("/forCollection", authMiddleware(["vice-secretary"]), getMembersForCollection);
+//get members for collection marking
+router.get("/forCollectionMarking", authMiddleware(["vice-secretary"]), getMembersForCollectionMarking);
+// public free members list for landing page
+router.get("/freePublic", getMembersStatusPublic);
+
+module.exports = router;
