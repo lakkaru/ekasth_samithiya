@@ -281,9 +281,9 @@ async function interestCalculation(
   }
   //getting installment
   let loanInstallment = 0;
-  let principleShouldPay=(10000/10)* totalMonths;
-  let totalPrinciplePaid=10000-remainingAmount;
-  if(totalPrinciplePaid>= principleShouldPay){
+  let principleShouldPay = (10000 / 10) * totalMonths;
+  let totalPrinciplePaid = 10000 - remainingAmount;
+  if (totalPrinciplePaid >= principleShouldPay) {
     loanInstallment = 0;
   }
   else if (totalMonths <= 10) {
@@ -431,7 +431,7 @@ async function loggedMemberId(req) {
   try {
     // Step 1: Extract the token from the request headers
     const token = req.headers.authorization?.split(" ")[1]; // Extract "Bearer <token>"
-    
+
     if (!token) {
       return { error: "Authorization token is missing" };
     }
@@ -445,10 +445,10 @@ async function loggedMemberId(req) {
     }
 
     const member = await Member.findOne({ member_id: decoded.member_id });
-    
+
     // Return null if member not found (admin users won't be in Member collection)
     return member; // This can be null for admin users
-    
+
   } catch (error) {
     return { error: "Authorization token is missing" };
   }
@@ -561,7 +561,7 @@ exports.getMemberHasLoanById = async (req, res) => {
     }
 
     const member = await Member.findOne({ member_id: decoded.member_id });
-    
+
     // Check if member exists (admin users might not be in Member collection)
     if (!member) {
       return res.status(200).json({ loan: false }); // Admin users don't have loans
@@ -571,7 +571,7 @@ exports.getMemberHasLoanById = async (req, res) => {
       memberId: member._id,
       loanRemainingAmount: { $gt: 0 },
     });
-    
+
     if (loan) {
       return res.status(200).json({ loan: true });
     } else {
@@ -598,20 +598,20 @@ exports.getMyLoan = async (req, res) => {
   try {
     // Step 1: Extract the token from the request headers
     const member = await loggedMemberId(req);
-    
+
     // Check if there's an error in getting the member or if member doesn't exist
     if (member && member.error) {
       return res.status(401).json({ error: member.error });
     }
-    
+
     // If member is null (admin user), return no loan data
     if (!member) {
-      return res.status(200).json({ 
-        loan: null, 
-        message: "Admin users do not have loan information" 
+      return res.status(200).json({
+        loan: null,
+        message: "Admin users do not have loan information"
       });
     }
-    
+
     const loan = await Loan.findOne({
       memberId: member._id,
       loanRemainingAmount: { $gt: 0 },
@@ -960,9 +960,9 @@ exports.getPayments = async (req, res) => {
       date:
         payment.date !== "Total"
           ? new Date(payment.date)
-              .toISOString()
-              .split("T")[0]
-              .replace(/-/g, "/")
+            .toISOString()
+            .split("T")[0]
+            .replace(/-/g, "/")
           : "Total",
     }));
     const grouped = formattedPayments.reduce((acc, payment) => {
@@ -1538,35 +1538,35 @@ exports.getMemberAllInfoById = async (req, res) => {
     const fines = await getAllFinesOfMember(member_Id);
     const finesTotal = fines["2025"]?.total.fineAmount || 0;
     const loanInfo = await memberLoanInfo(member_Id);
-    
+
     // Calculate totalDue - include loan installment based on unpaid months
     let totalDue;
     const hasUnpaidLoanMonths = loanInfo?.calculatedInterest?.int > 0 || loanInfo?.calculatedInterest?.penInt > 0;
-    
+
     if (exclude_loan_installment === 'true') {
       // For guarantors: include loan installments only if there are unpaid months
       totalDue = hasUnpaidLoanMonths && loanInfo?.calculatedInterest?.installment
         ? member.previousDue +
-          finesTotal -
-          finesTotalPayments +
-          currentMembershipDue +
-          loanInfo.calculatedInterest.installment
+        finesTotal -
+        finesTotalPayments +
+        currentMembershipDue +
+        loanInfo.calculatedInterest.installment
         : member.previousDue +
-          finesTotal -
-          finesTotalPayments +
-          currentMembershipDue;
+        finesTotal -
+        finesTotalPayments +
+        currentMembershipDue;
     } else {
       // For loan borrowers: include loan installments only if there are unpaid months
       totalDue = hasUnpaidLoanMonths && loanInfo?.calculatedInterest?.installment
         ? member.previousDue +
-          finesTotal -
-          finesTotalPayments +
-          currentMembershipDue +
-          loanInfo.calculatedInterest.installment
+        finesTotal -
+        finesTotalPayments +
+        currentMembershipDue +
+        loanInfo.calculatedInterest.installment
         : member.previousDue +
-          finesTotal -
-          finesTotalPayments +
-          currentMembershipDue;
+        finesTotal -
+        finesTotalPayments +
+        currentMembershipDue;
     }
 
     return res.status(200).json({
@@ -1619,7 +1619,22 @@ exports.getMemberIdsForFuneralAttendance = async (req, res) => {
         { deactivated_at: { $exists: false } }, // No deactivatedDate field
         { deactivated_at: null },
       ],
-      // Include all members, don't exclude any status
+      status: { $nin: ["free", "attendance-free"] }, // Exclude free and attendance-free members
+      roles: {
+        $not: {
+          $elemMatch: {
+            $in: [
+              "chairman",
+              "secretary",
+              "treasurer",
+              "loan-treasurer",
+              "vice-secretary",
+              "vice-chairman",
+              "auditor",
+            ],
+          },
+        },
+      }, // Exclude officers
     })
       .select("member_id status") // Select member_id and status fields
       .sort("member_id"); // Sort by member_id
@@ -1632,8 +1647,8 @@ exports.getMemberIdsForFuneralAttendance = async (req, res) => {
       showStatus: member.status === 'attendance-free' || member.status === 'free' // Only show these statuses
     }));
 
-    res.status(200).json({ 
-      success: true, 
+    res.status(200).json({
+      success: true,
       memberIds: memberIds, // Keep for backward compatibility
       membersWithStatus: membersWithStatus // New detailed format
     });
@@ -1665,8 +1680,8 @@ exports.getMembersForFuneralDocument = async (req, res) => {
       status: member.status || 'active' // Default to 'active' if no status
     }));
 
-    res.status(200).json({ 
-      success: true, 
+    res.status(200).json({
+      success: true,
       members: membersForDocument
     });
   } catch (error) {
@@ -1865,34 +1880,34 @@ exports.blacklistDueLoanMembers = async (req, res) => {
 // Create a new member
 exports.createMember = async (req, res) => {
   try {
-    const { 
-      member_id, 
-      name, 
-      area, 
-      phone, 
-      mobile, 
-      whatsApp, 
-      address, 
-      email, 
-      nic, 
+    const {
+      member_id,
+      name,
+      area,
+      phone,
+      mobile,
+      whatsApp,
+      address,
+      email,
+      nic,
       birthday,
       siblingsCount,
       status,
-      dependents 
+      dependents
     } = req.body;
 
     // Validate required fields
     if (!member_id || !name) {
-      return res.status(400).json({ 
-        error: "Member ID and Name are required fields" 
+      return res.status(400).json({
+        error: "Member ID and Name are required fields"
       });
     }
 
     // Check if member ID already exists
     const existingMember = await Member.findOne({ member_id });
     if (existingMember) {
-      return res.status(400).json({ 
-        error: "Member ID already exists" 
+      return res.status(400).json({
+        error: "Member ID already exists"
       });
     }
 
@@ -1900,8 +1915,8 @@ exports.createMember = async (req, res) => {
     if (email) {
       const existingEmail = await Member.findOne({ email });
       if (existingEmail) {
-        return res.status(400).json({ 
-          error: "Email already exists" 
+        return res.status(400).json({
+          error: "Email already exists"
         });
       }
     }
@@ -1910,8 +1925,8 @@ exports.createMember = async (req, res) => {
     if (nic) {
       const existingNIC = await Member.findOne({ nic });
       if (existingNIC) {
-        return res.status(400).json({ 
-          error: "NIC already exists" 
+        return res.status(400).json({
+          error: "NIC already exists"
         });
       }
     }
@@ -1920,7 +1935,7 @@ exports.createMember = async (req, res) => {
     let dependentIds = [];
     if (dependents && Array.isArray(dependents) && dependents.length > 0) {
       const validDependents = dependents.filter(dep => dep.name && dep.relationship && dep.birthday);
-      
+
       for (const depData of validDependents) {
         const dependent = new Dependant({
           name: depData.name.trim(),
@@ -1929,7 +1944,7 @@ exports.createMember = async (req, res) => {
           nic: depData.nic || null,
           dateOfDeath: depData.dateOfDeath ? new Date(depData.dateOfDeath) : null,
         });
-        
+
         const savedDependent = await dependent.save();
         dependentIds.push(savedDependent._id);
       }
@@ -1937,7 +1952,7 @@ exports.createMember = async (req, res) => {
 
     // Create new member
     const birthYear = birthday ? new Date(birthday).getFullYear().toString() : member_id.toString();
-    
+
     const newMember = new Member({
       member_id,
       name: name.trim(),
@@ -1976,12 +1991,12 @@ exports.createMember = async (req, res) => {
 
   } catch (error) {
     console.error("Error creating member:", error);
-    
+
     // Handle duplicate key errors
     if (error.code === 11000) {
       const duplicateField = Object.keys(error.keyPattern)[0];
-      return res.status(400).json({ 
-        error: `${duplicateField} already exists` 
+      return res.status(400).json({
+        error: `${duplicateField} already exists`
       });
     }
 
@@ -2032,68 +2047,68 @@ exports.getMemberForUpdate = async (req, res) => {
 exports.updateMember = async (req, res) => {
   try {
     const { member_id } = req.params;
-    const { 
-      name, 
-      area, 
-      phone, 
-      mobile, 
-      whatsApp, 
-      address, 
-      email, 
-      nic, 
+    const {
+      name,
+      area,
+      phone,
+      mobile,
+      whatsApp,
+      address,
+      email,
+      nic,
       birthday,
       siblingsCount,
       status,
-      dependents 
+      dependents
     } = req.body;
 
     // Validate required fields
     if (!name) {
-      return res.status(400).json({ 
-        error: "Name is required" 
+      return res.status(400).json({
+        error: "Name is required"
       });
     }
 
     // Find the existing member
     const existingMember = await Member.findOne({ member_id });
     if (!existingMember) {
-      return res.status(404).json({ 
-        error: "Member not found" 
+      return res.status(404).json({
+        error: "Member not found"
       });
     }
 
     // Check if email already exists for another member
     if (email && email !== existingMember.email) {
-      const emailExists = await Member.findOne({ 
-        email: email.toLowerCase(), 
-        member_id: { $ne: member_id } 
+      const emailExists = await Member.findOne({
+        email: email.toLowerCase(),
+        member_id: { $ne: member_id }
       });
       if (emailExists) {
-        return res.status(400).json({ 
-          error: "Email already exists for another member" 
+        return res.status(400).json({
+          error: "Email already exists for another member"
         });
       }
     }
 
     // Check if NIC already exists for another member
     if (nic && nic !== existingMember.nic) {
-      const nicExists = await Member.findOne({ 
-        nic: nic, 
-        member_id: { $ne: member_id } 
+      const nicExists = await Member.findOne({
+        nic: nic,
+        member_id: { $ne: member_id }
       });
       if (nicExists) {
-        return res.status(400).json({ 
-          error: "NIC already exists for another member" 
+        return res.status(400).json({
+          error: "NIC already exists for another member"
         });
       }
     }
 
     // Handle dependents update
     let dependentIds = [];
-    
+
     if (dependents && Array.isArray(dependents) && dependents.length > 0) {
       const validDependents = dependents.filter(dep => dep.name && dep.relationship && dep.birthday);
-      
+
       // Remove existing dependents that are not in the update
       if (existingMember.dependents && existingMember.dependents.length > 0) {
         for (const existingDepId of existingMember.dependents) {
@@ -2103,7 +2118,7 @@ exports.updateMember = async (req, res) => {
           }
         }
       }
-      
+
       // Create or update dependents
       for (const depData of validDependents) {
         if (depData._id) {
@@ -2131,7 +2146,7 @@ exports.updateMember = async (req, res) => {
             nic: depData.nic || null,
             dateOfDeath: depData.dateOfDeath ? new Date(depData.dateOfDeath) : null,
           });
-          
+
           const savedDependent = await dependent.save();
           dependentIds.push(savedDependent._id);
         }
@@ -2179,12 +2194,12 @@ exports.updateMember = async (req, res) => {
 
   } catch (error) {
     console.error("Error updating member:", error);
-    
+
     // Handle duplicate key errors
     if (error.code === 11000) {
       const duplicateField = Object.keys(error.keyPattern)[0];
-      return res.status(400).json({ 
-        error: `${duplicateField} already exists` 
+      return res.status(400).json({
+        error: `${duplicateField} already exists`
       });
     }
 
@@ -2368,12 +2383,12 @@ exports.searchMembersByName = async (req, res) => {
     const membersWithMatchInfo = members.map(member => {
       // Check if member name matches
       const memberNameMatches = member.name.toLowerCase().includes(name.toLowerCase());
-      
+
       // Check which dependents match
-      const matchingDependents = member.dependents.filter(dep => 
+      const matchingDependents = member.dependents.filter(dep =>
         dep.name.toLowerCase().includes(name.toLowerCase())
       );
-      
+
       // Add match information
       member.matchInfo = {
         memberNameMatches,
@@ -2382,7 +2397,7 @@ exports.searchMembersByName = async (req, res) => {
           relationship: dep.relationship
         }))
       };
-      
+
       return member;
     });
 
@@ -2407,7 +2422,7 @@ exports.getAreas = async (req, res) => {
   try {
     const areas = await Member.distinct('area');
     const filteredAreas = areas.filter(area => area && area.trim() !== '');
-    
+
     res.status(200).json({
       success: true,
       areas: filteredAreas.sort(),
@@ -2425,7 +2440,7 @@ exports.getAreas = async (req, res) => {
 exports.getMembersForCollection = async (req, res) => {
   try {
     const { area } = req.query;
-    
+
     if (!area) {
       return res.status(400).json({
         success: false,
@@ -2443,10 +2458,10 @@ exports.getMembersForCollection = async (req, res) => {
       "vice-chairman"
     ];
 
-  // Check whether caller wants admins included in the result
-  const includeAdmins = req.query.includeAdmins === 'true' || req.query.includeAdmins === '1'
-  // Check whether caller wants free members included
-  const includeFree = req.query.includeFree === 'true' || req.query.includeFree === '1'
+    // Check whether caller wants admins included in the result
+    const includeAdmins = req.query.includeAdmins === 'true' || req.query.includeAdmins === '1'
+    // Check whether caller wants free members included
+    const includeFree = req.query.includeFree === 'true' || req.query.includeFree === '1'
 
     // Get admin document so we can identify area admins/helpers and main officers
     const adminDoc = await Admin.findOne({});
@@ -2457,12 +2472,12 @@ exports.getMembersForCollection = async (req, res) => {
       if (adminDoc.areaAdmins) {
         const areaAdmin = adminDoc.areaAdmins.find(a => a.area === area)
         if (areaAdmin) {
-            // main admin id
-            if (areaAdmin.memberId) areaAdminIds.push(areaAdmin.memberId)
-            // helpers (keep for exclusion logic but mark separately)
-            if (areaAdmin.helper1 && areaAdmin.helper1.memberId) areaAdminIds.push(areaAdmin.helper1.memberId)
-            if (areaAdmin.helper2 && areaAdmin.helper2.memberId) areaAdminIds.push(areaAdmin.helper2.memberId)
-          }
+          // main admin id
+          if (areaAdmin.memberId) areaAdminIds.push(areaAdmin.memberId)
+          // helpers (keep for exclusion logic but mark separately)
+          if (areaAdmin.helper1 && areaAdmin.helper1.memberId) areaAdminIds.push(areaAdmin.helper1.memberId)
+          if (areaAdmin.helper2 && areaAdmin.helper2.memberId) areaAdminIds.push(areaAdmin.helper2.memberId)
+        }
       }
 
       // Collect main officer IDs
@@ -2593,8 +2608,8 @@ exports.getMembersStatusPublic = async (req, res) => {
 
     const [freeMembers, attendanceMembers, funeralMembers, totalActiveMembers] = await Promise.all([qFree.exec(), qAttendance.exec(), qFuneral.exec(), totalActiveQuery.exec()])
 
-    res.status(200).json({ 
-      success: true, 
+    res.status(200).json({
+      success: true,
       counts: {
         free: freeMembers.length,
         attendanceFree: attendanceMembers.length,
@@ -2615,7 +2630,7 @@ exports.getMembersStatusPublic = async (req, res) => {
 exports.getMembersForCollectionMarking = async (req, res) => {
   try {
     const { area } = req.query;
-    
+
     if (!area) {
       return res.status(400).json({
         success: false,
@@ -2655,8 +2670,8 @@ exports.getMembersForCollectionMarking = async (req, res) => {
       status: { $ne: "free" }, // Exclude only free members
       $and: [activeDeactivatedCondition, noDeathCondition]
     })
-    .select('member_id name area status roles')
-    .sort({ member_id: 1 });
+      .select('member_id name area status roles')
+      .sort({ member_id: 1 });
 
     res.status(200).json({
       success: true,
@@ -2680,21 +2695,21 @@ exports.getMembersForCommonWorkDocument = async (req, res) => {
   try {
     // Get all members (including deactivated and deceased ones to keep blank rows)
     const allMembers = await Member.find({})
-      .select("member_id name area status deactivated_at dateOfDeath") 
+      .select("member_id name area status deactivated_at dateOfDeath")
       .sort("member_id");
 
     // Get officers from the main Admin collection
     const adminDoc = await Admin.findOne({});
-    
+
     // Extract officer member IDs from the admin document
     const officerMemberIds = new Set();
     if (adminDoc) {
       // Add all main officers (chairman, secretary, etc.)
       const officers = [
-        'chairman', 'secretary', 'viceChairman', 'viceSecretary', 
+        'chairman', 'secretary', 'viceChairman', 'viceSecretary',
         'treasurer', 'loanTreasurer'
       ];
-      
+
       officers.forEach(role => {
         if (adminDoc[role] && adminDoc[role].memberId) {
           officerMemberIds.add(adminDoc[role].memberId);
@@ -2706,7 +2721,7 @@ exports.getMembersForCommonWorkDocument = async (req, res) => {
       // Check if member is deactivated or deceased
       const isDeactivated = member.deactivated_at != null;
       const isDeceased = member.dateOfDeath != null;
-      
+
       // Check if member is an officer
       const isOfficer = officerMemberIds.has(member.member_id);
 
@@ -2734,8 +2749,8 @@ exports.getMembersForCommonWorkDocument = async (req, res) => {
       };
     });
 
-    res.status(200).json({ 
-      success: true, 
+    res.status(200).json({
+      success: true,
       members: membersForDocument
     });
   } catch (error) {
