@@ -105,7 +105,6 @@ export default function FuneralAttendance() {
       const funeral = response.data.funeral
       setCurrentFuneral(funeral)
       setOriginalAbsents([...(funeral.eventAbsents || [])])
-      setHasChanges(false)
 
       // Load fined members for this funeral
       await loadFinedMembers(funeralId)
@@ -132,7 +131,6 @@ export default function FuneralAttendance() {
       setCurrentFuneral(null)
       setOriginalAbsents([])
       setFinedMembers([])
-      setHasChanges(false)
     }
     setError("")
     setSuccess("")
@@ -187,7 +185,6 @@ export default function FuneralAttendance() {
 
       setSuccess(successMsg)
       setOriginalAbsents([...absentMemberIds])
-      setHasChanges(false)
 
       // Scroll to top to show success message and updated information
       window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -215,7 +212,6 @@ export default function FuneralAttendance() {
     setCurrentFuneral(null)
     setOriginalAbsents([])
     setFinedMembers([])
-    setHasChanges(false)
     setError("")
     setSuccess("")
   }
