@@ -68,7 +68,7 @@ async function buildBalanceText(member) {
   // Dynamic label for Total Outstanding
   const totalLabel = totalOutstanding < 0 ? 'මුළු ඉතිරිය' : 'මුළු හිඟ';
 
-  return `${member.name}\nසා.අංකය: ${member.member_id}\n\nසාමාජිකත්ව හිඟ: ${formatCurrency(membershipDue)}\nදඩ හිඟ: ${formatCurrency(fineDue)}\n${prevDueLabel}: ${formatCurrency(previousDueVal)}\n\n${totalLabel}: ${formatCurrency(totalOutstanding)}`;
+  return `👤 ${member.name}\n🆔 සා.අංකය: ${member.member_id}\n\n=== 💰 මුදල් තත්ත්වය ===\n\n💳 සාමාජිකත්ව හිඟ: ${formatCurrency(membershipDue)}\n⚠️ දඩ හිඟ: ${formatCurrency(fineDue)}\n📅 ${prevDueLabel}: ${formatCurrency(previousDueVal)}\n\n━━━━━━━━━━━━━━━\n💵 ${totalLabel}: ${formatCurrency(totalOutstanding)}`;
 }
 
 async function buildAbsencesText(member) {
@@ -88,19 +88,19 @@ async function buildAbsencesText(member) {
   const attended = meetings.length - totalAbsents;
   const attendanceRate = ((attended / meetings.length) * 100).toFixed(1);
 
-  return `${member.name}\nසා.අංකය: ${member.member_id}\n\n${currentYear} වර්ෂය:\nසභා සංඛ්‍යාව: ${meetings.length}\nපැමිණි: ${attended}\nනොපැමිණි: ${totalAbsents}\nඑක පෙලට නොපැමිණීම: ${consecutiveAbsents}\nපැමිණීම: ${attendanceRate}%`;
+  return `👤 ${member.name}\n🆔 සා.අංකය: ${member.member_id}\n\n=== 📊 ${currentYear} වර්ෂය පැමිණීම ===\n\n📅 සභා සංඛ්‍යාව: ${meetings.length}\n✅ පැමිණි: ${attended}\n❌ නොපැමිණි: ${totalAbsents}\n🔄 එක පෙලට නොපැමිණීම: ${consecutiveAbsents}\n\n━━━━━━━━━━━━━━━\n📈 පැමිණීම: ${attendanceRate}%`;
 }
 
 async function buildFamilyText(member) {
   const dependents = member.dependents || [];
-  let text = `${member.name}\nසා.අංකය: ${member.member_id}\nසහෝදර/සහෝදරියන්: ${member.siblingsCount || 0}`;
+  let text = `👤 ${member.name}\n🆔 සා.අංකය: ${member.member_id}\n\n=== 👨‍👩‍👧‍👦 පවුල් විස්තර ===\n\n👫 සහෝදර/සහෝදරියන්: ${member.siblingsCount || 0}`;
   if (!dependents.length) {
-    text += '\n\nයැපෙන්නන් නොමැත';
+    text += '\n\n📝 යැපෙන්නන් නොමැත';
   } else {
-    text += `\n\nයැපෙන්නන් (${dependents.length}):\n`;
+    text += `\n\n👥 යැපෙන්නන් (${dependents.length}):\n`;
     dependents.forEach((d, i) => {
-      const status = d.dateOfDeath ? '(මියගිය)' : '';
-      text += `${i + 1}. ${d.name} - ${d.relationship} ${status}\n`;
+      const status = d.dateOfDeath ? '💀 (මියගිය)' : '✅';
+      text += `   ${i + 1}. ${d.name} - ${d.relationship} ${status}\n`;
     });
   }
   return text;
@@ -208,14 +208,7 @@ async function buildPaymentsText(member) {
     });
   }
 
-  // Summary section
-  text += `\n📊 සාරාංශය:\n`;
-  text += `   ${currentYear} සාමාජික මුදල්: ${formatCurrency(curMemTotal)}\n`;
-  text += `   ${currentYear} දඩ/හිඟ මුදල්: ${formatCurrency(curFineTotal)}\n`;
-  if (pastMemTotal > 0 || pastFineTotal > 0) {
-    text += `   පසුගිය වසර සාමාජික මුදල්: ${formatCurrency(pastMemTotal)}\n`;
-    text += `   පසුගිය වසර දඩ/හිඟ මුදල්: ${formatCurrency(pastFineTotal)}`;
-  }
+
 
   return text;
 }
