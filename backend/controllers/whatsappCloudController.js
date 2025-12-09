@@ -111,7 +111,7 @@ async function buildPaymentsText(member) {
   const startOfYear = new Date(currentYear, 0, 1);
 
   // 1. Membership Payments
-  const allMemPayments = await MembershipPayment.find({ memberId: member._id }).sort({ date: 1 });
+  const allMemPayments = await MembershipPayment.find({ memberId: member._id }).sort({ date: -1 });
   const pastMemPayments = allMemPayments.filter(p => new Date(p.date) < startOfYear);
   const curMemPayments = allMemPayments.filter(p => new Date(p.date) >= startOfYear);
 
@@ -119,18 +119,21 @@ async function buildPaymentsText(member) {
   const curMemTotal = curMemPayments.reduce((s, p) => s + (p.amount || 0), 0);
 
   // 2. Fine/Due Payments
-  const allFinePayments = await FinePayment.find({ memberId: member._id }).sort({ date: 1 });
+  const allFinePayments = await FinePayment.find({ memberId: member._id }).sort({ date: -1 });
   const pastFinePayments = allFinePayments.filter(p => new Date(p.date) < startOfYear);
   const curFinePayments = allFinePayments.filter(p => new Date(p.date) >= startOfYear);
 
   const pastFineTotal = pastFinePayments.reduce((s, p) => s + (p.amount || 0), 0);
   const curFineTotal = curFinePayments.reduce((s, p) => s + (p.amount || 0), 0);
 
-  let text = `${member.name}\nසා.අංකය: ${member.member_id}\n\n=== ${currentYear} ගෙවීම් විස්තර ===\n`;
+  let text = `${member.name}\nසා.අංකය: ${member.member_id}\n\n=== ගෙවීම් විස්තර ===\n`;
 
-  // Section 1: Membership Payments - Current Year
+  // Section 1: Membership Payments
   text += `\n💰 සාමාජික මුදල්:\n`;
+
+  // Current Year
   if (curMemPayments.length > 0) {
+    text += `\n   ${currentYear} වසර:\n`;
     curMemPayments.forEach(p => {
       const d = p.date ? new Date(p.date).toLocaleDateString('si-LK') : '';
       text += `   📅 ${d}: ${formatCurrency(p.amount)}\n`;
@@ -138,12 +141,26 @@ async function buildPaymentsText(member) {
     text += `   ➖➖➖➖➖➖➖\n`;
     text += `   එකතුව: ${formatCurrency(curMemTotal)}\n`;
   } else {
-    text += `   ${currentYear} වසරේ ගෙවීම් නැත\n`;
+    text += `\n   ${currentYear} වසරේ ගෙවීම් නැත\n`;
   }
 
-  // Section 2: Fine/Due Payments - Current Year
+  // Past Years
+  if (pastMemPayments.length > 0) {
+    text += `\n   පසුගිය වසර:\n`;
+    pastMemPayments.forEach(p => {
+      const d = p.date ? new Date(p.date).toLocaleDateString('si-LK') : '';
+      text += `   📅 ${d}: ${formatCurrency(p.amount)}\n`;
+    });
+    text += `   ➖➖➖➖➖➖➖\n`;
+    text += `   එකතුව: ${formatCurrency(pastMemTotal)}\n`;
+  }
+
+  // Section 2: Fine/Due Payments
   text += `\n⚠️ දඩ/හිඟ මුදල්:\n`;
+
+  // Current Year
   if (curFinePayments.length > 0) {
+    text += `\n   ${currentYear} වසර:\n`;
     curFinePayments.forEach(p => {
       const d = p.date ? new Date(p.date).toLocaleDateString('si-LK') : '';
       text += `   📅 ${d}: ${formatCurrency(p.amount)}\n`;
@@ -151,17 +168,27 @@ async function buildPaymentsText(member) {
     text += `   ➖➖➖➖➖➖➖\n`;
     text += `   එකතුව: ${formatCurrency(curFineTotal)}\n`;
   } else {
-    text += `   ${currentYear} වසරේ ගෙවීම් නැත\n`;
+    text += `\n   ${currentYear} වසරේ ගෙවීම් නැත\n`;
   }
 
-  // Summary section with past years
+  // Past Years
+  if (pastFinePayments.length > 0) {
+    text += `\n   පසුගිය වසර:\n`;
+    pastFinePayments.forEach(p => {
+      const d = p.date ? new Date(p.date).toLocaleDateString('si-LK') : '';
+      text += `   📅 ${d}: ${formatCurrency(p.amount)}\n`;
+    });
+    text += `   ➖➖➖➖➖➖➖\n`;
+    text += `   එකතුව: ${formatCurrency(pastFineTotal)}\n`;
+  }
+
+  // Summary section
   text += `\n📊 සාරාංශය:\n`;
   text += `   ${currentYear} සාමාජික මුදල්: ${formatCurrency(curMemTotal)}\n`;
   text += `   ${currentYear} දඩ/හිඟ මුදල්: ${formatCurrency(curFineTotal)}\n`;
   if (pastMemTotal > 0 || pastFineTotal > 0) {
-    text += `\n   පසුගිය වසර:\n`;
-    if (pastMemTotal > 0) text += `   - සාමාජික මුදල්: ${formatCurrency(pastMemTotal)}\n`;
-    if (pastFineTotal > 0) text += `   - දඩ/හිඟ මුදල්: ${formatCurrency(pastFineTotal)}`;
+    text += `   පසුගිය වසර සාමාජික මුදල්: ${formatCurrency(pastMemTotal)}\n`;
+    text += `   පසුගිය වසර දඩ/හිඟ මුදල්: ${formatCurrency(pastFineTotal)}`;
   }
 
   return text;
