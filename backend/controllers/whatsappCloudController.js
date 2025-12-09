@@ -99,7 +99,7 @@ async function buildFamilyText(member) {
   } else {
     text += `\n\n👥 යැපෙන්නන් (${dependents.length}):\n`;
     dependents.forEach((d, i) => {
-      const status = d.dateOfDeath ? '💀 (මියගිය)' : '✅';
+      const status = d.dateOfDeath ? ' (මියගිය)' : '';
       text += `   ${i + 1}. ${d.name} - ${d.relationship} ${status}\n`;
     });
   }
@@ -226,34 +226,68 @@ async function buildFinesText(member) {
   const pastTotal = pastFines.reduce((s, f) => s + (f.amount || 0), 0);
   const curTotal = curFines.reduce((s, f) => s + (f.amount || 0), 0);
 
-  let text = `${member.name}\nසා.අංකය: ${member.member_id}\n\n=== දඩ විස්තර ===\n`;
-
-  // Past Fines Summary
-  text += `   - පසුගිය වසරවල එකතුව: ${formatCurrency(pastTotal)}\n`;
+  let text = `👤 ${member.name}\n🆔 සා.අංකය: ${member.member_id}\n\n=== ⚠️ දඩ විස්තර ===\n`;
 
   // Current Year Details
   if (curFines.length > 0) {
-    text += `   - ${currentYear} දඩ:\n`;
+    text += `\n   ${currentYear} වසර:\n`;
     curFines.forEach(f => {
-      const d = f.date ? new Date(f.date).toISOString().split('T')[0] : '';
+      const d = f.date ? new Date(f.date).toLocaleDateString('si-LK') : '';
       let type = f.eventType || 'other';
       let reason = 'වෙනත්';
+      let emoji = '📌';
 
-      // Mapping eventType to Sinhala labels
-      if (type === 'meeting') reason = 'සභා රැස්වීම් දඩ';
-      else if (type === 'funeral') reason = 'අවමංගල්‍ය';
-      else if (type === 'funeral-work') reason = 'දේහය ගෙනයාම';
-      else if (type === 'cemetery-work') reason = 'පිටියේ වැඩ';
-      else if (type === 'common-work') reason = 'පොදු වැඩ';
-      else if (type === 'extraDue') reason = 'අමතර දඩ';
+      // Mapping eventType to Sinhala labels with emojis
+      if (type === 'meeting') { reason = 'සභා රැස්වීම්'; emoji = '📅'; }
+      else if (type === 'funeral') { reason = 'අවමංගල්‍ය'; emoji = '⚰️'; }
+      else if (type === 'funeral-work') { reason = 'දේහය ගෙනයාම'; emoji = '🚶'; }
+      else if (type === 'cemetery-work') { reason = 'පිටියේ වැඩ'; emoji = '⛏️'; }
+      else if (type === 'common-work') { reason = 'පොදු වැඩ'; emoji = '🔨'; }
+      else if (type === 'extraDue') { reason = 'අමතර දඩ'; emoji = '💰'; }
 
-      text += `     ${d}: ${reason} - ${formatCurrency(f.amount)}\n`;
+      text += `   ${emoji} ${d}: ${reason} - ${formatCurrency(f.amount)}\n`;
     });
+    text += `   ➖➖➖➖➖➖➖\n`;
+    text += `   එකතුව: ${formatCurrency(curTotal)}\n`;
   } else {
-    text += `   - ${currentYear} දඩ නැත\n`;
+    text += `\n   ${currentYear} වසරේ දඩ නැත\n`;
   }
 
-  text += `   - ${currentYear} මුළු එකතුව: ${formatCurrency(curTotal)}`;
+  // Past Years - Group by year
+  if (pastFines.length > 0) {
+    // Group fines by year
+    const finesByYear = {};
+    pastFines.forEach(f => {
+      const year = f.date ? new Date(f.date).getFullYear() : 'Unknown';
+      if (!finesByYear[year]) finesByYear[year] = [];
+      finesByYear[year].push(f);
+    });
+
+    // Display each year's fines
+    Object.keys(finesByYear).sort((a, b) => b - a).forEach(year => {
+      const yearFines = finesByYear[year];
+      const yearTotal = yearFines.reduce((s, f) => s + (f.amount || 0), 0);
+      text += `\n   ${year} වසර:\n`;
+      yearFines.forEach(f => {
+        const d = f.date ? new Date(f.date).toLocaleDateString('si-LK') : '';
+        let type = f.eventType || 'other';
+        let reason = 'වෙනත්';
+        let emoji = '📌';
+
+        // Mapping eventType to Sinhala labels with emojis
+        if (type === 'meeting') { reason = 'සභා රැස්වීම්'; emoji = '📅'; }
+        else if (type === 'funeral') { reason = 'අවමංගල්‍ය'; emoji = '⚰️'; }
+        else if (type === 'funeral-work') { reason = 'දේහය ගෙනයාම'; emoji = '🚶'; }
+        else if (type === 'cemetery-work') { reason = 'පිටියේ වැඩ'; emoji = '⛏️'; }
+        else if (type === 'common-work') { reason = 'පොදු වැඩ'; emoji = '🔨'; }
+        else if (type === 'extraDue') { reason = 'අමතර දඩ'; emoji = '💰'; }
+
+        text += `   ${emoji} ${d}: ${reason} - ${formatCurrency(f.amount)}\n`;
+      });
+      text += `   ➖➖➖➖➖➖➖\n`;
+      text += `   එකතුව: ${formatCurrency(yearTotal)}\n`;
+    });
+  }
 
   return text;
 }
