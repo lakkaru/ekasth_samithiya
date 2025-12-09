@@ -144,15 +144,28 @@ async function buildPaymentsText(member) {
     text += `\n   ${currentYear} වසරේ ගෙවීම් නැත\n`;
   }
 
-  // Past Years
+  // Past Years - Group by year
   if (pastMemPayments.length > 0) {
-    text += `\n   පසුගිය වසර:\n`;
+    // Group payments by year
+    const paymentsByYear = {};
     pastMemPayments.forEach(p => {
-      const d = p.date ? new Date(p.date).toLocaleDateString('si-LK') : '';
-      text += `   📅 ${d}: ${formatCurrency(p.amount)}\n`;
+      const year = p.date ? new Date(p.date).getFullYear() : 'Unknown';
+      if (!paymentsByYear[year]) paymentsByYear[year] = [];
+      paymentsByYear[year].push(p);
     });
-    text += `   ➖➖➖➖➖➖➖\n`;
-    text += `   එකතුව: ${formatCurrency(pastMemTotal)}\n`;
+
+    // Display each year's payments
+    Object.keys(paymentsByYear).sort((a, b) => b - a).forEach(year => {
+      const yearPayments = paymentsByYear[year];
+      const yearTotal = yearPayments.reduce((s, p) => s + (p.amount || 0), 0);
+      text += `\n   ${year} වසර:\n`;
+      yearPayments.forEach(p => {
+        const d = p.date ? new Date(p.date).toLocaleDateString('si-LK') : '';
+        text += `   📅 ${d}: ${formatCurrency(p.amount)}\n`;
+      });
+      text += `   ➖➖➖➖➖➖➖\n`;
+      text += `   එකතුව: ${formatCurrency(yearTotal)}\n`;
+    });
   }
 
   // Section 2: Fine/Due Payments
@@ -171,15 +184,28 @@ async function buildPaymentsText(member) {
     text += `\n   ${currentYear} වසරේ ගෙවීම් නැත\n`;
   }
 
-  // Past Years
+  // Past Years - Group by year
   if (pastFinePayments.length > 0) {
-    text += `\n   පසුගිය වසර:\n`;
+    // Group payments by year
+    const paymentsByYear = {};
     pastFinePayments.forEach(p => {
-      const d = p.date ? new Date(p.date).toLocaleDateString('si-LK') : '';
-      text += `   📅 ${d}: ${formatCurrency(p.amount)}\n`;
+      const year = p.date ? new Date(p.date).getFullYear() : 'Unknown';
+      if (!paymentsByYear[year]) paymentsByYear[year] = [];
+      paymentsByYear[year].push(p);
     });
-    text += `   ➖➖➖➖➖➖➖\n`;
-    text += `   එකතුව: ${formatCurrency(pastFineTotal)}\n`;
+
+    // Display each year's payments
+    Object.keys(paymentsByYear).sort((a, b) => b - a).forEach(year => {
+      const yearPayments = paymentsByYear[year];
+      const yearTotal = yearPayments.reduce((s, p) => s + (p.amount || 0), 0);
+      text += `\n   ${year} වසර:\n`;
+      yearPayments.forEach(p => {
+        const d = p.date ? new Date(p.date).toLocaleDateString('si-LK') : '';
+        text += `   📅 ${d}: ${formatCurrency(p.amount)}\n`;
+      });
+      text += `   ➖➖➖➖➖➖➖\n`;
+      text += `   එකතුව: ${formatCurrency(yearTotal)}\n`;
+    });
   }
 
   // Summary section
