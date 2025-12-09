@@ -10,7 +10,6 @@ import {
   CardContent,
   Grid,
   Chip,
-  CircularProgress,
   FormControl,
   InputLabel
 } from "@mui/material"
@@ -44,7 +43,6 @@ export default function FuneralAttendance() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
-  const [hasChanges, setHasChanges] = useState(false)
 
   // Fine settings
   const [fineSettings, setFineSettings] = useState({
