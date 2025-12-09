@@ -126,35 +126,43 @@ async function buildPaymentsText(member) {
   const pastFineTotal = pastFinePayments.reduce((s, p) => s + (p.amount || 0), 0);
   const curFineTotal = curFinePayments.reduce((s, p) => s + (p.amount || 0), 0);
 
-  let text = `${member.name}\nසා.අංකය: ${member.member_id}\n\n=== ගෙවීම් විස්තර ===\n`;
+  let text = `${member.name}\nසා.අංකය: ${member.member_id}\n\n=== ${currentYear} ගෙවීම් විස්තර ===\n`;
 
-  // Section 1: Membership
-  text += `\n1. සාමාජික මුදල්:\n`;
-  text += `   - පසුගිය වසරවල එකතුව: ${formatCurrency(pastMemTotal)}\n`;
+  // Section 1: Membership Payments - Current Year
+  text += `\n💰 සාමාජික මුදල්:\n`;
   if (curMemPayments.length > 0) {
-    text += `   - ${currentYear} ගෙවීම්:\n`;
     curMemPayments.forEach(p => {
-      const d = p.date ? new Date(p.date).toISOString().split('T')[0] : '';
-      text += `     ${d}: ${formatCurrency(p.amount)}\n`;
+      const d = p.date ? new Date(p.date).toLocaleDateString('si-LK') : '';
+      text += `   📅 ${d}: ${formatCurrency(p.amount)}\n`;
     });
+    text += `   ➖➖➖➖➖➖➖\n`;
+    text += `   එකතුව: ${formatCurrency(curMemTotal)}\n`;
   } else {
-    text += `   - ${currentYear} ගෙවීම් නැත\n`;
+    text += `   ${currentYear} වසරේ ගෙවීම් නැත\n`;
   }
-  text += `   - ${currentYear} මුළු එකතුව: ${formatCurrency(curMemTotal)}\n`;
 
-  // Section 2: Fines/Due
-  text += `\n2. දඩ/හිඟ මුදල්:\n`;
-  text += `   - පසුගිය වසරවල එකතුව: ${formatCurrency(pastFineTotal)}\n`;
+  // Section 2: Fine/Due Payments - Current Year
+  text += `\n⚠️ දඩ/හිඟ මුදල්:\n`;
   if (curFinePayments.length > 0) {
-    text += `   - ${currentYear} ගෙවීම්:\n`;
     curFinePayments.forEach(p => {
-      const d = p.date ? new Date(p.date).toISOString().split('T')[0] : '';
-      text += `     ${d}: ${formatCurrency(p.amount)}\n`;
+      const d = p.date ? new Date(p.date).toLocaleDateString('si-LK') : '';
+      text += `   📅 ${d}: ${formatCurrency(p.amount)}\n`;
     });
+    text += `   ➖➖➖➖➖➖➖\n`;
+    text += `   එකතුව: ${formatCurrency(curFineTotal)}\n`;
   } else {
-    text += `   - ${currentYear} ගෙවීම් නැත\n`;
+    text += `   ${currentYear} වසරේ ගෙවීම් නැත\n`;
   }
-  text += `   - ${currentYear} මුළු එකතුව: ${formatCurrency(curFineTotal)}`;
+
+  // Summary section with past years
+  text += `\n📊 සාරාංශය:\n`;
+  text += `   ${currentYear} සාමාජික මුදල්: ${formatCurrency(curMemTotal)}\n`;
+  text += `   ${currentYear} දඩ/හිඟ මුදල්: ${formatCurrency(curFineTotal)}\n`;
+  if (pastMemTotal > 0 || pastFineTotal > 0) {
+    text += `\n   පසුගිය වසර:\n`;
+    if (pastMemTotal > 0) text += `   - සාමාජික මුදල්: ${formatCurrency(pastMemTotal)}\n`;
+    if (pastFineTotal > 0) text += `   - දඩ/හිඟ මුදල්: ${formatCurrency(pastFineTotal)}`;
+  }
 
   return text;
 }
