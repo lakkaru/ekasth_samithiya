@@ -173,9 +173,14 @@ async function getAllFinesOfMember(member_Id) {
 
         if (
           fineType === "funeral" ||
-          fineType === "extraDue" ||
           fineType === "funeral-ceremony"
         ) {
+          // Skip if eventId is null or invalid
+          if (!fine.eventId) {
+            console.error(`Missing eventId for fine type: ${fineType}`);
+            return null;
+          }
+
           const funeral = await Funeral.findById(fine.eventId)
             .select("date member_id")
             .populate("member_id", "name area");
@@ -190,8 +195,6 @@ async function getAllFinesOfMember(member_Id) {
 
           if (fineType === "funeral") {
             fineDescription = `${funeral.member_id?.area} ${funeral.member_id?.name} ගේ සාමාජිකත්වය යටතේ අවමංගල්‍ය `;
-          } else if (fineType === "extraDue") {
-            fineDescription = `${funeral.member_id?.area} ${funeral.member_id?.name} ගේ සාමාජිකත්වය යටතේ අවමංගල්‍යයට අතිරේක ආධාර `;
           } else if (fineType === "funeral-ceremony") {
             fineDescription = `${funeral.member_id?.area} ${funeral.member_id?.name} ගේ සාමාජිකත්වය යටතේ අවමංගල්‍යයට දේහය ගෙන යාම`;
           }
@@ -203,6 +206,38 @@ async function getAllFinesOfMember(member_Id) {
             // name: funeral.member_id?.name || "Unknown",
             // area: funeral.member_id?.area || "Unknown",
           };
+        } else if (fineType === "extraDue") {
+          // Handle extraDue fines (may or may not have eventId)
+          if (fine.eventId) {
+            const funeral = await Funeral.findById(fine.eventId)
+              .select("date member_id")
+              .populate("member_id", "name area");
+            
+            if (funeral) {
+              date = new Date(funeral.date).toISOString().split("T")[0];
+              fineDetails = {
+                date,
+                fineType: `${funeral.member_id?.area} ${funeral.member_id?.name} ගේ සාමාජිකත්වය යටතේ අවමංගල්‍යයට අතිරේක ආධාර `,
+                fineAmount,
+              };
+            } else {
+              // Funeral not found, use fine date
+              date = fine.date ? new Date(fine.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
+              fineDetails = {
+                date,
+                fineType: "අතිරේක ආධාර හිඟ මුදල",
+                fineAmount,
+              };
+            }
+          } else {
+            // No eventId, use fine date
+            date = fine.date ? new Date(fine.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
+            fineDetails = {
+              date,
+              fineType: "අතිරේක ආධාර හිඟ මුදල",
+              fineAmount,
+            };
+          }
         } else if (fineType === "meeting") {
           const meeting = await Meeting.findById(fine.eventId).select("date");
 
@@ -216,6 +251,14 @@ async function getAllFinesOfMember(member_Id) {
           fineDetails = {
             date,
             fineType: `දින මහා සභාව වන විට මහා සභා වාර තුනක් නොපැමිණීම. `,
+            fineAmount,
+          };
+        } else if (fineType === "common-work") {
+          // Handle common-work fines (no eventId needed)
+          date = fine.date ? new Date(fine.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
+          fineDetails = {
+            date,
+            fineType: "පොදු වැඩ දඩ මුදල",
             fineAmount,
           };
         } else {
