@@ -96,9 +96,9 @@ export default function DueList() {
 
     // Map member data for table display with color coding
     const tableData = members.map(member => {
-        const isDue = member.totalDue > 0
-        const isExtra = member.totalDue < 0
-        const isZero = member.totalDue === 0
+        const isDue = member.dueWithoutLoan > 0
+        const isExtra = member.dueWithoutLoan < 0
+        const isZero = member.dueWithoutLoan === 0
 
         let statusColor = '#666'
         let statusEmoji = '⚪'
@@ -132,7 +132,7 @@ export default function DueList() {
             ),
             amount: (
                 <Box sx={{ color: statusColor, fontWeight: 'bold' }}>
-                    {formatCurrency(member.totalDue)}
+                    {formatCurrency(member.dueWithoutLoan)}
                 </Box>
             ),
             onClick: () => navigate(`/member/fullDetails?memberId=${member.member_id}`)
@@ -140,13 +140,13 @@ export default function DueList() {
     })
 
     // Calculate summary statistics
-    const totalDue = members.filter(m => m.totalDue > 0).reduce((sum, m) => sum + m.totalDue, 0)
-    const totalExtra = members.filter(m => m.totalDue < 0).reduce((sum, m) => sum + Math.abs(m.totalDue), 0)
+    const totalDue = members.filter(m => m.dueWithoutLoan > 0).reduce((sum, m) => sum + m.dueWithoutLoan, 0)
+    const totalExtra = members.filter(m => m.dueWithoutLoan < 0).reduce((sum, m) => sum + Math.abs(m.dueWithoutLoan), 0)
     const totalLoanInstallment = members.reduce((sum, m) => sum + (m.loanInstallment || 0), 0)
     const membersWithLoans = members.filter(m => (m.loanInstallment || 0) > 0).length
-    const dueCount = members.filter(m => m.totalDue > 0).length
-    const extraCount = members.filter(m => m.totalDue < 0).length
-    const zeroCount = members.filter(m => m.totalDue === 0).length
+    const dueCount = members.filter(m => m.dueWithoutLoan > 0).length
+    const extraCount = members.filter(m => m.dueWithoutLoan < 0).length
+    const zeroCount = members.filter(m => m.dueWithoutLoan === 0).length
 
     return (
         <Layout>

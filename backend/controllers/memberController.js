@@ -2894,13 +2894,15 @@ exports.getAllMembersDue = async (req, res) => {
 
                 // Add previous due
                 const previousDueVal = member.previousDue || 0;
-                const totalOutstanding = membershipDue + fineDue + previousDueVal + loanInstallment;
+                const dueWithoutLoan = membershipDue + fineDue + previousDueVal;
+                const totalOutstanding = dueWithoutLoan + loanInstallment;
 
                 return {
                     member_id: member.member_id,
                     name: member.name,
-                    totalDue: totalOutstanding,
-                    loanInstallment: loanInstallment
+                    dueWithoutLoan: dueWithoutLoan,
+                    loanInstallment: loanInstallment,
+                    totalDue: totalOutstanding
                 };
             })
         );
