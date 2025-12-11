@@ -1538,29 +1538,7 @@ exports.getMemberAllInfoById = async (req, res) => {
     const fines = await getAllFinesOfMember(member_Id);
     const finesTotal = fines["2025"]?.total.fineAmount || 0;
     const loanInfo = await memberLoanInfo(member_Id);
-    
-    // Calculate common work (funeral) and extra due totals for the current year
-    const currentYearStr = new Date().getFullYear().toString();
-    let commonWorkDue = 0;
-    let extraDue = 0;
-    try {
-      const rawMember = await Member.findById(member_Id).select('fines');
-      const rawFines = rawMember?.fines || [];
-      rawFines.forEach(f => {
-        try {
-          const fYear = f.date ? new Date(f.date).getFullYear().toString() : currentYearStr;
-          if (fYear !== currentYearStr) return;
-          if (f.eventType === 'funeral') commonWorkDue += f.amount || 0;
-          if (f.eventType === 'extraDue') extraDue += f.amount || 0;
-        } catch (e) {
-          // ignore malformed fine entries
-        }
-      });
-    } catch (e) {
-      // if unable to load raw fines, default to 0
-      commonWorkDue = 0;
-      extraDue = 0;
-    }
+
     // Calculate totalDue - include loan installment based on unpaid months
     let totalDue;
     const hasUnpaidLoanMonths = loanInfo?.calculatedInterest?.int > 0 || loanInfo?.calculatedInterest?.penInt > 0;
@@ -1601,8 +1579,6 @@ exports.getMemberAllInfoById = async (req, res) => {
         groupedPayments,
         loanInfo,
         totalDue,
-        commonWorkDue,
-        extraDue,
       },
     });
   } catch (error) {
