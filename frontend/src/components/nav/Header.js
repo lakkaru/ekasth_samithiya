@@ -171,100 +171,109 @@ const Header = ({ siteTitle }) => {
   }, [isAuthenticated, roles])
 
   return (
-    <header>
-      <AuthComponent onAuthStateChange={handleAuthStateChange} />
-      <Box
-        sx={{
-          flexGrow: 1,
-          maxWidth: "1024px",
-          margin: "0 auto",
-          width: "100%",
-        }}
-      >
-        <AppBar
-          position="static"
+    <Box
+      sx={{
+        position: "sticky",
+        top: 0,
+        zIndex: 1100,
+        width: "100%",
+      }}
+    >
+      <header>
+        <AuthComponent onAuthStateChange={handleAuthStateChange} />
+        <Box
           sx={{
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            boxShadow: "0 4px 20px rgba(102, 126, 234, 0.3)",
+            flexGrow: 1,
+            maxWidth: "1024px",
+            margin: "0 auto",
+            width: "100%",
           }}
         >
-          <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }}>
-            <Box sx={{ display: "flex", alignItems: "center", flexGrow: 1 }}>
-              <Avatar
-                sx={{
-                  bgcolor: "white",
-                  color: "#667eea",
-                  mr: 2,
-                  width: { xs: 32, sm: 40 },
-                  height: { xs: 32, sm: 40 },
-                }}
-              >
-                <AccountBalanceIcon
+          <AppBar
+            position="static"
+            sx={{
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              boxShadow: "0 4px 20px rgba(102, 126, 234, 0.3)",
+            }}
+          >
+            <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }}>
+              <Box sx={{ display: "flex", alignItems: "center", flexGrow: 1 }}>
+                <Avatar
                   sx={{
-                    fontSize: { xs: "1.25rem", sm: "1.5rem" },
+                    bgcolor: "white",
+                    color: "#667eea",
+                    mr: 2,
+                    width: { xs: 32, sm: 40 },
+                    height: { xs: 32, sm: 40 },
                   }}
-                />
-              </Avatar>
-              <Typography
-                variant="h6"
+                >
+                  <AccountBalanceIcon
+                    sx={{
+                      fontSize: { xs: "1.25rem", sm: "1.5rem" },
+                    }}
+                  />
+                </Avatar>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    flexGrow: 1,
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                    fontSize: { xs: "1rem", sm: "1.25rem" },
+                    color: "white",
+                    textShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                  }}
+                  onClick={() => navigate("/")}
+                >
+                  {siteTitle}
+                </Typography>
+              </Box>
+
+              {/* Mobile Menu Button */}
+              <IconButton
+                color="inherit"
                 sx={{
-                  flexGrow: 1,
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                  fontSize: { xs: "1rem", sm: "1.25rem" },
-                  color: "white",
-                  textShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                  display: { xs: "block", sm: "none" },
+                  bgcolor: "rgba(255,255,255,0.1)",
+                  "&:hover": { bgcolor: "rgba(255,255,255,0.2)" },
                 }}
-                onClick={() => navigate("/")}
+                onClick={handleMobileMenuToggle}
               >
-                {siteTitle}
-              </Typography>
-            </Box>
+                <MenuIcon />
+              </IconButton>
 
-            {/* Mobile Menu Button */}
-            <IconButton
-              color="inherit"
-              sx={{
-                display: { xs: "block", sm: "none" },
-                bgcolor: "rgba(255,255,255,0.1)",
-                "&:hover": { bgcolor: "rgba(255,255,255,0.2)" },
-              }}
-              onClick={handleMobileMenuToggle}
-            >
-              <MenuIcon />
-            </IconButton>
-
-            {/* Desktop Buttons */}
-            <DesktopButtons 
-              isAuthenticated={isAuthenticated}
-              roles={roles}
-              memberName={memberName}
-              memberId={memberId}
-              hasLoan={hasLoan}
-              handleLogout={handleLogout} 
-            />
-
-            {/* Mobile Menu */}
-            {mobileMenuOpen && (
-              <MobileMenuButtons 
+              {/* Desktop Buttons */}
+              <DesktopButtons 
                 isAuthenticated={isAuthenticated}
                 roles={roles}
                 memberName={memberName}
                 memberId={memberId}
                 hasLoan={hasLoan}
-                handleLogout={handleLogout}
-                handleMobileNavigate={handleMobileNavigate}
+                handleLogout={handleLogout} 
               />
-            )}
-          </Toolbar>
-        </AppBar>
-      </Box>
-      <WelcomeMessage
-        memberName={memberName}
-        memberId={memberId}
-        isAuthenticated={isAuthenticated}
-      />
-    </header>
+
+              {/* Mobile Menu */}
+              {mobileMenuOpen && (
+                <MobileMenuButtons 
+                  isAuthenticated={isAuthenticated}
+                  roles={roles}
+                  memberName={memberName}
+                  memberId={memberId}
+                  hasLoan={hasLoan}
+                  handleLogout={handleLogout}
+                  handleMobileNavigate={handleMobileNavigate}
+                />
+              )}
+            </Toolbar>
+          </AppBar>
+        </Box>
+        <WelcomeMessage
+          memberName={memberName}
+          memberId={memberId}
+          isAuthenticated={isAuthenticated}
+        />
+      </header>
+    </Box>
   )
 }
 

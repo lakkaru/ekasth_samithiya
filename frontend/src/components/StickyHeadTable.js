@@ -46,16 +46,6 @@ export default function StickyHeadTable({
         <Table stickyHeader aria-label="sticky table">
           <TableHead >
             <TableRow >
-              <TableCell
-                align="center"
-                sx={{
-                  padding: "4px",
-                  border: headBorder ? "1px solid black" : "none",
-                  fontWeight: "bold",
-                }}
-              >
-                #
-              </TableCell>
               {columnsArray.map(column => (
                 <TableCell
                   key={column.id}
@@ -83,8 +73,11 @@ export default function StickyHeadTable({
                     role="checkbox"
                     tabIndex={-1}
                     key={index}
+                    onClick={() => row.onClick && row.onClick()}
                     sx={{
                       border: borders ? "1px solid black" : "none",
+                      borderBottom: "1px solid rgba(224, 224, 224, 1)",
+                      cursor: row.onClick ? "pointer" : "default",
                       fontWeight: isLastRow ? "bold" : "normal",
                       backgroundColor: isLastRow
                         ? totalRow
@@ -105,19 +98,6 @@ export default function StickyHeadTable({
                       },
                     }}
                   >
-                    <TableCell
-                      align="center"
-                      sx={{
-                        padding: "4px",
-                        border: borders ? "1px solid black" : "none",
-                      }}
-                    >
-                      {isLastRow
-                        ? totalRow
-                          ? ""
-                          : page * rowsPerPage + index + 1
-                        : page * rowsPerPage + index + 1}
-                    </TableCell>
                     {columnsArray.map(column => {
                       const value = row[column.id]
                       return (
@@ -126,7 +106,8 @@ export default function StickyHeadTable({
                           align={dataAlignment || "right"}
                           sx={{
                             padding: "4px",
-                            border: borders ? ".5px solid black" : "none",
+                            borderLeft: borders ? ".5px solid black" : "none",
+                            borderRight: borders ? ".5px solid black" : "none",
                           }}
                         >
                           {column.format && typeof value === "string"
