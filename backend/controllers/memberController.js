@@ -226,7 +226,7 @@ async function getAllFinesOfMember(member_Id) {
               date = fine.date ? new Date(fine.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
               fineDetails = {
                 date,
-                fineType: "අතිරේක ආධාර හිඟ මුදල (අවමංගල්‍යය)",
+                fineType: "අතිරේක ආධාර හිඟ මුදල (බලප්‍රදේශයෙන් පිට අවමංගල්‍යය)",
                 fineAmount,
               };
             }
@@ -235,7 +235,7 @@ async function getAllFinesOfMember(member_Id) {
             date = fine.date ? new Date(fine.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
             fineDetails = {
               date,
-              fineType: "අතිරේක ආධාර හිඟ මුදල (අවමංගල්‍යය)",
+              fineType: "අතිරේක ආධාර හිඟ මුදල (බලප්‍රදේශයෙන් පිට අවමංගල්‍යය)",
               fineAmount,
             };
           }
@@ -2867,14 +2867,40 @@ exports.getAllMembersDue = async (req, res) => {
                 const totalFinePaid = finePayments.reduce((s, p) => s + (p.amount || 0), 0);
                 const fineDue = fineTotal - totalFinePaid;
 
+                // Get loan installment if applicable
+                const loan = await Loan.findOne({
+                    memberId: member._id,
+                    loanRemainingAmount: { $gt: 0 }
+                }).select('loanDate loanRemainingAmount');
+
+                let loanInstallment = 0;
+                if (loan) {
+                    const lastIntPayment = await LoanInterestPayment.findOne({
+                        loanId: loan._id
+                    }).sort({ date: -1 }).select('date');
+
+                    const calculatedInterest = await interestCalculation(
+                        loan.loanDate,
+                        loan.loanRemainingAmount,
+                        lastIntPayment?.date,
+                        new Date()
+                    );
+                    
+                    // Only include installment if there are unpaid months
+                    if (calculatedInterest?.int > 0 || calculatedInterest?.penInt > 0) {
+                        loanInstallment = calculatedInterest.installment || 0;
+                    }
+                }
+
                 // Add previous due
                 const previousDueVal = member.previousDue || 0;
-                const totalOutstanding = membershipDue + fineDue + previousDueVal;
+                const totalOutstanding = membershipDue + fineDue + previousDueVal + loanInstallment;
 
                 return {
                     member_id: member.member_id,
                     name: member.name,
-                    totalDue: totalOutstanding
+                    totalDue: totalOutstanding,
+                    loanInstallment: loanInstallment
                 };
             })
         );
