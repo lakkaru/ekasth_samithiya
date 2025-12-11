@@ -35,6 +35,7 @@ const {
   getMembersForCollection,
   getMembersForCollectionMarking,
   getMembersStatusPublic,
+  getAllMembersDue,
 } = require("../controllers/memberController");
 const authMiddleware = require("../middleware/authMiddleware");
 
@@ -128,5 +129,7 @@ router.get("/forCollection", authMiddleware(["vice-secretary"]), getMembersForCo
 router.get("/forCollectionMarking", authMiddleware(["vice-secretary"]), getMembersForCollectionMarking);
 // public free members list for landing page
 router.get("/freePublic", getMembersStatusPublic);
+//get all members with their due/remaining amounts
+router.get("/getAllMembersDue", authMiddleware(["vice-secretary", "treasurer"]), getAllMembersDue);
 
 module.exports = router;

@@ -7,9 +7,9 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
 
   return (
     <Box sx={{ mb: 3 }}>
-      <Typography variant="subtitle2" sx={{ 
-        textAlign: "center", 
-        color: "#667eea", 
+      <Typography variant="subtitle2" sx={{
+        textAlign: "center",
+        color: "#667eea",
         fontWeight: 'bold',
         mb: 2,
         py: 1,
@@ -20,9 +20,9 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       </Typography>
 
       {/* Attendance Section */}
-      <Typography variant="body2" sx={{ 
-        color: "#667eea", 
-        fontSize: "0.875rem", 
+      <Typography variant="body2" sx={{
+        color: "#667eea",
+        fontSize: "0.875rem",
         fontWeight: 'bold',
         mb: 1,
         ml: 1,
@@ -35,10 +35,10 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       </Typography>
 
       {/* Printing Category */}
-      <Typography variant="caption" sx={{ 
-        px: 2, 
-        py: 0.5, 
-        color: 'text.secondary', 
+      <Typography variant="caption" sx={{
+        px: 2,
+        py: 0.5,
+        color: 'text.secondary',
         fontWeight: 'bold',
         fontSize: '0.65rem',
         textTransform: 'uppercase',
@@ -54,9 +54,9 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       <Button
         color="inherit"
         onClick={() => onMenuItemClick("/forms/MeetingSheet")}
-        sx={{ 
-          textTransform: "none", 
-          width: "100%", 
+        sx={{
+          textTransform: "none",
+          width: "100%",
           paddingLeft: "40px",
           mb: 0.5,
           justifyContent: 'flex-start',
@@ -72,9 +72,9 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       <Button
         color="inherit"
         onClick={() => onMenuItemClick("/forms/FuneralAttendanceSheet")}
-        sx={{ 
-          textTransform: "none", 
-          width: "100%", 
+        sx={{
+          textTransform: "none",
+          width: "100%",
           paddingLeft: "40px",
           mb: 0.5,
           justifyContent: 'flex-start',
@@ -90,9 +90,9 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       <Button
         color="inherit"
         onClick={() => onMenuItemClick("/forms/CommonWorkAttendanceSheet")}
-        sx={{ 
-          textTransform: "none", 
-          width: "100%", 
+        sx={{
+          textTransform: "none",
+          width: "100%",
           paddingLeft: "40px",
           mb: 1,
           justifyContent: 'flex-start',
@@ -107,10 +107,10 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       </Button>
 
       {/* Marking Category */}
-      <Typography variant="caption" sx={{ 
-        px: 2, 
-        py: 0.5, 
-        color: 'text.secondary', 
+      <Typography variant="caption" sx={{
+        px: 2,
+        py: 0.5,
+        color: 'text.secondary',
         fontWeight: 'bold',
         fontSize: '0.65rem',
         textTransform: 'uppercase',
@@ -126,9 +126,9 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       <Button
         color="inherit"
         onClick={() => onMenuItemClick("/funeral/funeralAttendance")}
-        sx={{ 
-          textTransform: "none", 
-          width: "100%", 
+        sx={{
+          textTransform: "none",
+          width: "100%",
           paddingLeft: "40px",
           mb: 0.5,
           justifyContent: 'flex-start',
@@ -144,9 +144,9 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       <Button
         color="inherit"
         onClick={() => onMenuItemClick("/funeral/funeralWorkAttendance")}
-        sx={{ 
-          textTransform: "none", 
-          width: "100%", 
+        sx={{
+          textTransform: "none",
+          width: "100%",
           paddingLeft: "40px",
           mb: 0.5,
           justifyContent: 'flex-start',
@@ -162,9 +162,9 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       <Button
         color="inherit"
         onClick={() => onMenuItemClick("/meeting/Attendance")}
-        sx={{ 
-          textTransform: "none", 
-          width: "100%", 
+        sx={{
+          textTransform: "none",
+          width: "100%",
           paddingLeft: "40px",
           mb: 0.5,
           justifyContent: 'flex-start',
@@ -180,9 +180,9 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       <Button
         color="inherit"
         onClick={() => onMenuItemClick("/commonworks/attendance")}
-        sx={{ 
-          textTransform: "none", 
-          width: "100%", 
+        sx={{
+          textTransform: "none",
+          width: "100%",
           paddingLeft: "40px",
           mb: 1,
           justifyContent: 'flex-start',
@@ -197,10 +197,10 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       </Button>
 
       {/* Monitoring Category */}
-      <Typography variant="caption" sx={{ 
-        px: 2, 
-        py: 0.5, 
-        color: 'text.secondary', 
+      <Typography variant="caption" sx={{
+        px: 2,
+        py: 0.5,
+        color: 'text.secondary',
         fontWeight: 'bold',
         fontSize: '0.65rem',
         textTransform: 'uppercase',
@@ -216,9 +216,9 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       <Button
         color="inherit"
         onClick={() => onMenuItemClick("/reports/meetingAttendance")}
-        sx={{ 
-          textTransform: "none", 
-          width: "100%", 
+        sx={{
+          textTransform: "none",
+          width: "100%",
           paddingLeft: "40px",
           mb: 1.5,
           justifyContent: 'flex-start',
@@ -233,9 +233,9 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       </Button>
 
       {/* Funeral Section */}
-      <Typography variant="body2" sx={{ 
-        color: "#667eea", 
-        fontSize: "0.875rem", 
+      <Typography variant="body2" sx={{
+        color: "#667eea",
+        fontSize: "0.875rem",
         fontWeight: 'bold',
         mb: 1,
         ml: 1,
@@ -249,9 +249,9 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       <Button
         color="inherit"
         onClick={() => onMenuItemClick("/member/deathById")}
-        sx={{ 
-          textTransform: "none", 
-          width: "100%", 
+        sx={{
+          textTransform: "none",
+          width: "100%",
           paddingLeft: "40px",
           mb: 0.5,
           justifyContent: 'flex-start',
@@ -267,9 +267,9 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       <Button
         color="inherit"
         onClick={() => onMenuItemClick("/funeral/assignment")}
-        sx={{ 
-          textTransform: "none", 
-          width: "100%", 
+        sx={{
+          textTransform: "none",
+          width: "100%",
           paddingLeft: "40px",
           mb: 0.5,
           justifyContent: 'flex-start',
@@ -285,9 +285,9 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       <Button
         color="inherit"
         onClick={() => onMenuItemClick("/funeral/collectionList")}
-        sx={{ 
-          textTransform: "none", 
-          width: "100%", 
+        sx={{
+          textTransform: "none",
+          width: "100%",
           paddingLeft: "40px",
           mb: 0.5,
           justifyContent: 'flex-start',
@@ -303,9 +303,9 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       <Button
         color="inherit"
         onClick={() => onMenuItemClick("/funeral/collectionMarking")}
-        sx={{ 
-          textTransform: "none", 
-          width: "100%", 
+        sx={{
+          textTransform: "none",
+          width: "100%",
           paddingLeft: "40px",
           mb: 1.5,
           justifyContent: 'flex-start',
@@ -320,34 +320,60 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       </Button>
 
       {/* Member Information Section */}
+      <Typography variant="body2" sx={{
+        color: "#667eea",
+        fontSize: "0.875rem",
+        fontWeight: 'bold',
+        mb: 1,
+        ml: 1,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.5
+      }}>
+        <PersonIcon fontSize="small" />
+        සාමාජික තොරතුරු
+      </Typography>
       <Button
         color="inherit"
         onClick={() => onMenuItemClick("/member/fullDetails")}
-        startIcon={<PersonIcon />}
-        sx={{ 
-          textTransform: "none", 
+        sx={{
+          textTransform: "none",
           width: "100%",
-          mb: 1.5,
+          paddingLeft: "40px",
+          mb: 0.5,
           justifyContent: 'flex-start',
-          backgroundColor: 'rgba(102, 126, 234, 0.15)',
-          border: '1px solid rgba(102, 126, 234, 0.2)',
-          '&:hover': { 
-            backgroundColor: 'rgba(102, 126, 234, 0.25)',
-            transform: 'translateX(2px)'
-          },
-          borderRadius: 2,
-          py: 1.5,
-          color: '#333',
-          transition: 'all 0.2s ease'
+          backgroundColor: 'rgba(102, 126, 234, 0.05)',
+          '&:hover': { backgroundColor: 'rgba(102, 126, 234, 0.1)' },
+          borderRadius: 1,
+          py: 1,
+          color: '#555'
         }}
       >
-        සාමාජික තොරතුරු
+        • සාමාජික තොරතුරු
+      </Button>
+      <Button
+        color="inherit"
+        onClick={() => onMenuItemClick("/member/due-list")}
+        sx={{
+          textTransform: "none",
+          width: "100%",
+          paddingLeft: "40px",
+          mb: 1.5,
+          justifyContent: 'flex-start',
+          backgroundColor: 'rgba(102, 126, 234, 0.05)',
+          '&:hover': { backgroundColor: 'rgba(102, 126, 234, 0.1)' },
+          borderRadius: 1,
+          py: 1,
+          color: '#555'
+        }}
+      >
+        • සාමාජික හිඟ ලැයිස්තුව
       </Button>
 
       {/* Membership Section */}
-      <Typography variant="body2" sx={{ 
-        color: "#667eea", 
-        fontSize: "0.875rem", 
+      <Typography variant="body2" sx={{
+        color: "#667eea",
+        fontSize: "0.875rem",
         fontWeight: 'bold',
         mb: 1,
         ml: 1,
@@ -361,9 +387,9 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       <Button
         color="inherit"
         onClick={() => onMenuItemClick("/member/add-member")}
-        sx={{ 
-          textTransform: "none", 
-          width: "100%", 
+        sx={{
+          textTransform: "none",
+          width: "100%",
           paddingLeft: "40px",
           mb: 0.5,
           justifyContent: 'flex-start',
@@ -379,9 +405,9 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       <Button
         color="inherit"
         onClick={() => onMenuItemClick("/member/update-member")}
-        sx={{ 
-          textTransform: "none", 
-          width: "100%", 
+        sx={{
+          textTransform: "none",
+          width: "100%",
           paddingLeft: "40px",
           mb: 0.5,
           justifyContent: 'flex-start',
@@ -397,9 +423,9 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       <Button
         color="inherit"
         onClick={() => onMenuItemClick("/member/search-by-area")}
-        sx={{ 
-          textTransform: "none", 
-          width: "100%", 
+        sx={{
+          textTransform: "none",
+          width: "100%",
           paddingLeft: "40px",
           mb: 0.5,
           justifyContent: 'flex-start',
@@ -415,8 +441,8 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       <Button
         color="inherit"
         onClick={() => onMenuItemClick("/member/search-by-id")}
-        sx={{ 
-          textTransform: "none", 
+        sx={{
+          textTransform: "none",
           width: "100%",
           paddingLeft: "40px",
           mb: 0.5,
@@ -433,9 +459,9 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       <Button
         color="inherit"
         onClick={() => onMenuItemClick("/member/search-by-name")}
-        sx={{ 
-          textTransform: "none", 
-          width: "100%", 
+        sx={{
+          textTransform: "none",
+          width: "100%",
           paddingLeft: "40px",
           mb: 2,
           justifyContent: 'flex-start',
@@ -452,8 +478,8 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
       <Button
         color="inherit"
         onClick={() => onMenuItemClick("/member/special-memberships")}
-        sx={{ 
-          textTransform: "none", 
+        sx={{
+          textTransform: "none",
           width: "100%",
           paddingLeft: "40px",
           mb: 2,

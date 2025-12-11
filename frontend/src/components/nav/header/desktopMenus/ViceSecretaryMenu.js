@@ -18,6 +18,7 @@ const ViceSecretaryMenu = ({ isViceSecretary }) => {
   const [attendanceAnchorEl, setAttendanceAnchorEl] = useState(null)
   const [membershipAnchorEl, setMemberShipAnchorEl] = useState(null)
   const [membershipViceSecAnchorEl, setMembershipViceSecAnchorEl] = useState(null)
+  const [memberInfoAnchorEl, setMemberInfoAnchorEl] = useState(null)
 
   const handleAttendanceMenuOpen = event => setAttendanceAnchorEl(event.currentTarget)
   const handleAttendanceMenuClose = () => setAttendanceAnchorEl(null)
@@ -25,6 +26,8 @@ const ViceSecretaryMenu = ({ isViceSecretary }) => {
   const handleMembershipMenuClose = () => setMemberShipAnchorEl(null)
   const handleMembershipViceSecMenuOpen = event => setMembershipViceSecAnchorEl(event.currentTarget)
   const handleMembershipViceSecMenuClose = () => setMembershipViceSecAnchorEl(null)
+  const handleMemberInfoMenuOpen = event => setMemberInfoAnchorEl(event.currentTarget)
+  const handleMemberInfoMenuClose = () => setMemberInfoAnchorEl(null)
 
   if (!isViceSecretary) return null
 
@@ -69,12 +72,12 @@ const ViceSecretaryMenu = ({ isViceSecretary }) => {
           },
         }}
       >
-        <Typography 
-          variant="caption" 
-          sx={{ 
-            px: 2, 
-            py: 0.5, 
-            color: 'text.secondary', 
+        <Typography
+          variant="caption"
+          sx={{
+            px: 2,
+            py: 0.5,
+            color: 'text.secondary',
             fontWeight: 'bold',
             fontSize: '0.7rem',
             textTransform: 'uppercase',
@@ -108,12 +111,12 @@ const ViceSecretaryMenu = ({ isViceSecretary }) => {
           📋 පොදු වැඩ පැමිණීම ලේඛණය
         </MenuItem>
         <Divider sx={{ my: 1 }} />
-        <Typography 
-          variant="caption" 
-          sx={{ 
-            px: 2, 
-            py: 0.5, 
-            color: 'text.secondary', 
+        <Typography
+          variant="caption"
+          sx={{
+            px: 2,
+            py: 0.5,
+            color: 'text.secondary',
             fontWeight: 'bold',
             fontSize: '0.7rem',
             textTransform: 'uppercase',
@@ -122,7 +125,7 @@ const ViceSecretaryMenu = ({ isViceSecretary }) => {
         >
           සලකුණු කිරීම
         </Typography>
-         <MenuItem
+        <MenuItem
           onClick={() => {
             navigate("/funeral/funeralAttendance")
             handleAttendanceMenuClose()
@@ -155,12 +158,12 @@ const ViceSecretaryMenu = ({ isViceSecretary }) => {
           ✓ පොදු වැඩ
         </MenuItem>
         <Divider sx={{ my: 1 }} />
-        <Typography 
-          variant="caption" 
-          sx={{ 
-            px: 2, 
-            py: 0.5, 
-            color: 'text.secondary', 
+        <Typography
+          variant="caption"
+          sx={{
+            px: 2,
+            py: 0.5,
+            color: 'text.secondary',
             fontWeight: 'bold',
             fontSize: '0.7rem',
             textTransform: 'uppercase',
@@ -234,7 +237,7 @@ const ViceSecretaryMenu = ({ isViceSecretary }) => {
         >
           අවමංගල්‍ය පැවරීම
         </MenuItem>
-        <hr/>
+        <hr />
         <MenuItem
           onClick={() => {
             navigate("/funeral/collectionList")
@@ -264,7 +267,7 @@ const ViceSecretaryMenu = ({ isViceSecretary }) => {
       <Button
         color="inherit"
         variant="outlined"
-        onClick={() => navigate("/member/fullDetails")}
+        onClick={handleMemberInfoMenuOpen}
         startIcon={<PersonIcon />}
         sx={{
           textTransform: "none",
@@ -278,6 +281,45 @@ const ViceSecretaryMenu = ({ isViceSecretary }) => {
       >
         සාමාජික තොරතුරු
       </Button>
+      <Menu
+        anchorEl={memberInfoAnchorEl}
+        open={Boolean(memberInfoAnchorEl)}
+        onClose={handleMemberInfoMenuClose}
+        PaperProps={{
+          sx: {
+            mt: 1,
+            borderRadius: 2,
+            boxShadow: "0 8px 25px rgba(0,0,0,0.15)",
+            "& .MuiMenuItem-root": {
+              py: 1.5,
+              px: 2,
+              borderRadius: 1,
+              mx: 1,
+              my: 0.5,
+              "&:hover": {
+                backgroundColor: "rgba(102, 126, 234, 0.1)",
+              },
+            },
+          },
+        }}
+      >
+        <MenuItem
+          onClick={() => {
+            navigate("/member/fullDetails")
+            handleMemberInfoMenuClose()
+          }}
+        >
+          සාමාජික තොරතුරු
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            navigate("/member/due-list")
+            handleMemberInfoMenuClose()
+          }}
+        >
+          සාමාජික හිඟ ලැයිස්තුව
+        </MenuItem>
+      </Menu>
 
       <Button
         color="inherit"
@@ -352,14 +394,14 @@ const ViceSecretaryMenu = ({ isViceSecretary }) => {
         >
           සාමාජික තොරතුරු යාවත්කාලීන කිරීම
         </MenuItem>
-        <hr/>
+        <hr />
         <MenuItem
           onClick={() => {
             navigate("/member/search-by-area")
             handleMembershipViceSecMenuClose()
           }}
         >
-        
+
           ප්‍රදේශය අනුව සෙවීම
         </MenuItem>
         <MenuItem

@@ -18,6 +18,7 @@ const TreasurerMenu = ({ isTreasurer }) => {
   const [expenseAnchorEl, setExpenseAnchorEl] = useState(null)
   const [reportAnchorEl, setReportAnchorEl] = useState(null)
   const [funeralAnchorEl, setFuneralAnchorEl] = useState(null)
+  const [memberInfoAnchorEl, setMemberInfoAnchorEl] = useState(null)
 
   const handleMoneyMenuOpen = event => setMoneyAnchorEl(event.currentTarget)
   const handleMoneyMenuClose = () => setMoneyAnchorEl(null)
@@ -29,6 +30,8 @@ const TreasurerMenu = ({ isTreasurer }) => {
   const handleReportMenuClose = () => setReportAnchorEl(null)
   const handleFuneralMenuOpen = event => setFuneralAnchorEl(event.currentTarget)
   const handleFuneralMenuClose = () => setFuneralAnchorEl(null)
+  const handleMemberInfoMenuOpen = event => setMemberInfoAnchorEl(event.currentTarget)
+  const handleMemberInfoMenuClose = () => setMemberInfoAnchorEl(null)
 
   if (!isTreasurer) return null
 
@@ -272,7 +275,7 @@ const TreasurerMenu = ({ isTreasurer }) => {
 
       <Button
         color="inherit"
-        onClick={() => navigate("/member/fullDetails")}
+        onClick={handleMemberInfoMenuOpen}
         startIcon={<PersonIcon />}
         sx={{
           textTransform: "none",
@@ -284,6 +287,45 @@ const TreasurerMenu = ({ isTreasurer }) => {
       >
         සාමාජික තොරතුරු
       </Button>
+      <Menu
+        anchorEl={memberInfoAnchorEl}
+        open={Boolean(memberInfoAnchorEl)}
+        onClose={handleMemberInfoMenuClose}
+        PaperProps={{
+          sx: {
+            mt: 1,
+            borderRadius: 2,
+            boxShadow: "0 8px 25px rgba(0,0,0,0.15)",
+            "& .MuiMenuItem-root": {
+              py: 1.5,
+              px: 2,
+              borderRadius: 1,
+              mx: 1,
+              my: 0.5,
+              "&:hover": {
+                backgroundColor: "rgba(102, 126, 234, 0.1)",
+              },
+            },
+          },
+        }}
+      >
+        <MenuItem
+          onClick={() => {
+            navigate("/member/fullDetails")
+            handleMemberInfoMenuClose()
+          }}
+        >
+          සාමාජික තොරතුරු
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            navigate("/member/due-list")
+            handleMemberInfoMenuClose()
+          }}
+        >
+          සාමාජික හිඟ ලැයිස්තුව
+        </MenuItem>
+      </Menu>
 
       <Divider
         orientation="vertical"

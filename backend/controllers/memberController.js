@@ -2761,3 +2761,68 @@ exports.getMembersForCommonWorkDocument = async (req, res) => {
     });
   }
 };
+
+// Get all active members with their due/remaining amounts
+exports.getAllMembersDue = async (req, res) => {
+    try {
+        const currentYear = new Date().getFullYear();
+        const monthsToCharge = new Date().getMonth();
+        const startOfYear = new Date(currentYear, 0, 1);
+
+        // Fetch all active members (not deactivated)
+        const activeMembers = await Member.find({
+            deactivated_at: null
+        }).sort({ member_id: 1 }).select('member_id name siblingsCount previousDue fines');
+
+        // Calculate due for each member
+        const membersWithDue = await Promise.all(
+            activeMembers.map(async (member) => {
+                // Calculate membership charge
+                let membershipCharge = 300 * monthsToCharge;
+                if (member.siblingsCount > 0) {
+                    membershipCharge = (300 * member.siblingsCount * 0.3 + 300) * monthsToCharge;
+                }
+
+                // Get membership payments for current year
+                const membershipPayments = await MembershipPayment.find({
+                    memberId: member._id,
+                    date: { $gte: startOfYear }
+                });
+                const totalMembershipPaid = membershipPayments.reduce((s, p) => s + (p.amount || 0), 0);
+                const membershipDue = membershipCharge - totalMembershipPaid;
+
+                // Calculate fine due
+                const fineTotal = member.fines?.reduce((s, f) => s + (f.amount || 0), 0) || 0;
+                const finePayments = await FinePayment.find({
+                    memberId: member._id,
+                    date: { $gte: startOfYear }
+                });
+                const totalFinePaid = finePayments.reduce((s, p) => s + (p.amount || 0), 0);
+                const fineDue = fineTotal - totalFinePaid;
+
+                // Add previous due
+                const previousDueVal = member.previousDue || 0;
+                const totalOutstanding = membershipDue + fineDue + previousDueVal;
+
+                return {
+                    member_id: member.member_id,
+                    name: member.name,
+                    totalDue: totalOutstanding
+                };
+            })
+        );
+
+        res.status(200).json({
+            success: true,
+            members: membersWithDue,
+            count: membersWithDue.length
+        });
+    } catch (error) {
+        console.error('Error fetching all members due:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching members due information.',
+            error: error.message
+        });
+    }
+};
