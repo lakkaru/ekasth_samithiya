@@ -266,6 +266,12 @@ export default function FullDetails() {
           <Typography sx={{ fontWeight: 800, fontSize: { xs: '.8rem', sm: '1.1rem' }, color: member.totalDue < 0 ? 'green' : 'orange' }}>
             {member.totalDue < 0 ? `ඉතිරි මුදල රු. ${Math.abs(member.totalDue)}` : `හිඟ එකතුව රු. ${Math.abs(member.totalDue || 0)}`}
           </Typography>
+          <Typography sx={{ fontWeight: 700, fontSize: { xs: '.8rem', sm: '1rem' }, color: member.commonWorkDue > 0 ? 'orange' : 'green' }}>
+            {member.commonWorkDue ? `සා.වැඩ හිඟ රු. ${Math.abs(member.commonWorkDue)}` : `සා.වැඩ හිඟ රු. 0`}
+          </Typography>
+          <Typography sx={{ fontWeight: 700, fontSize: { xs: '.8rem', sm: '1rem' }, color: member.extraDue > 0 ? 'orange' : 'green' }}>
+            {member.extraDue ? `අතිරේක හිඟ රු. ${Math.abs(member.extraDue)}` : `අතිරේක හිඟ රු. 0`}
+          </Typography>
         </Box>
       </Paper>
       <Divider sx={{ mb: 3 }} />
