@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import Layout from "../../components/layout"
 import { Box, Button, Paper, TextField, Typography, Grid, Divider } from "@mui/material"
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -25,6 +25,27 @@ export default function FullDetails() {
 
   const [memberId, setMemberId] = useState("")
   const [member, setMember] = useState({})
+
+  // Check for memberId in URL parameters and auto-fetch member data
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const memberIdFromUrl = params.get('memberId')
+      if (memberIdFromUrl) {
+        setMemberId(memberIdFromUrl)
+        // Fetch member data automatically
+        api
+          .get(`${baseUrl}/member/getMemberAllInfoById?member_id=${memberIdFromUrl}`)
+          .then(response => {
+            const member = response?.data?.memberData || {}
+            setMember(member || {})
+          })
+          .catch(error => {
+            console.error("Axios error: ", error)
+          })
+      }
+    }
+  }, [])
 
   // Normalize and parse deactivated date from various possible shapes
   const getDeactivatedInfo = (m) => {
