@@ -14,6 +14,7 @@ const MembershipPayment = require("../models/MembershipPayment");
 const FinePayment = require("../models/FinePayment");
 const Funeral = require("../models/Funeral");
 const Meeting = require("../models/Meeting");
+const CommonWork = require("../models/CommonWork");
 
 // Environment variable for JWT secret
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -217,7 +218,7 @@ async function getAllFinesOfMember(member_Id) {
               date = new Date(funeral.date).toISOString().split("T")[0];
               fineDetails = {
                 date,
-                fineType: `${funeral.member_id?.area} ${funeral.member_id?.name} ගේ සාමාජිකත්වය යටතේ අවමංගල්‍යයට අතිරේක ආධාර `,
+                fineType: `අතිරේක ආධාර හිඟ - ${funeral.member_id?.area} ${funeral.member_id?.name} (අවමංගල්‍යය)`,
                 fineAmount,
               };
             } else {
@@ -225,7 +226,7 @@ async function getAllFinesOfMember(member_Id) {
               date = fine.date ? new Date(fine.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
               fineDetails = {
                 date,
-                fineType: "අතිරේක ආධාර හිඟ මුදල",
+                fineType: "අතිරේක ආධාර හිඟ මුදල (අවමංගල්‍යය)",
                 fineAmount,
               };
             }
@@ -234,7 +235,7 @@ async function getAllFinesOfMember(member_Id) {
             date = fine.date ? new Date(fine.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
             fineDetails = {
               date,
-              fineType: "අතිරේක ආධාර හිඟ මුදල",
+              fineType: "අතිරේක ආධාර හිඟ මුදල (අවමංගල්‍යය)",
               fineAmount,
             };
           }
@@ -254,13 +255,36 @@ async function getAllFinesOfMember(member_Id) {
             fineAmount,
           };
         } else if (fineType === "common-work") {
-          // Handle common-work fines (no eventId needed)
-          date = fine.date ? new Date(fine.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
-          fineDetails = {
-            date,
-            fineType: "පොදු වැඩ දඩ මුදල",
-            fineAmount,
-          };
+          // Handle common-work fines with eventId lookup
+          if (fine.eventId) {
+            const commonWork = await CommonWork.findById(fine.eventId)
+              .select("date title");
+            
+            if (commonWork) {
+              date = new Date(commonWork.date).toISOString().split("T")[0];
+              fineDetails = {
+                date,
+                fineType: `පොදු වැඩ නොපැමිණීම - ${commonWork.title}`,
+                fineAmount,
+              };
+            } else {
+              // CommonWork not found, use fine date
+              date = fine.date ? new Date(fine.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
+              fineDetails = {
+                date,
+                fineType: "පොදු වැඩ නොපැමිණීම",
+                fineAmount,
+              };
+            }
+          } else {
+            // No eventId, use fine date
+            date = fine.date ? new Date(fine.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
+            fineDetails = {
+              date,
+              fineType: "පොදු වැඩ නොපැමිණීම",
+              fineAmount,
+            };
+          }
         } else {
           console.error(`Unknown fine type: ${fineType}`);
           return null;
