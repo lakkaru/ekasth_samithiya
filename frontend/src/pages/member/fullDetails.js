@@ -7,6 +7,7 @@ import GroupIcon from '@mui/icons-material/Group';
 import GavelIcon from '@mui/icons-material/Gavel';
 import PaymentsIcon from '@mui/icons-material/Payments';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import { navigate } from "gatsby"
 import api from "../../utils/api"
@@ -162,8 +163,18 @@ export default function FullDetails() {
   return (
     <Layout>
       <AuthComponent onAuthStateChange={handleAuthStateChange} />
+      {/* Back Button */}
+      <Box sx={{ mb: 2, mt: 2 }}>
+        <Button 
+          variant="outlined" 
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate(-1)}
+        >
+          ආපසු යන්න
+        </Button>
+      </Box>
       {/* Member Search */}
-      <Paper elevation={3} sx={{ p: { xs: 2, sm: 3 }, mb: 3, mt: 2 }}>
+      <Paper elevation={3} sx={{ p: { xs: 2, sm: 3 }, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} sm={2} sx={{ display: 'flex', alignItems: 'center' }}>
             <AccountCircleIcon color="primary" sx={{ mr: 1 }} />
