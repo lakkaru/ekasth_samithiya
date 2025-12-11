@@ -213,7 +213,7 @@ export default function DueList() {
                             </Box>
                             {totalLoanInstallment > 0 && (
                                 <Box>
-                                    <Typography variant="body2" color="text.secondary">මුළු හිඟ ණය වාරික ({membersWithLoans} දෙනා)</Typography>
+                                    <Typography variant="body2" color="text.secondary">මුළු ණය වාරික ({membersWithLoans} දෙනා)</Typography>
                                     <Typography variant="h6" sx={{ color: '#1976d2' }}>{formatCurrency(totalLoanInstallment)}</Typography>
                                 </Box>
                             )}
