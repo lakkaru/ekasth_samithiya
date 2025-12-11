@@ -9,7 +9,6 @@ import {
   Divider,
 } from "@mui/material"
 import {
-  SupervisorAccount as SupervisorIcon,
   Dashboard as DashboardIcon,
   People as PeopleIcon,
   Settings as SettingsIcon,
@@ -40,7 +39,6 @@ export default function SuperAdminMenu({ isSuperAdmin, handleLogout }) {
       <Button
         color="inherit"
         onClick={handleMenuOpen}
-        startIcon={<SupervisorIcon />}
         sx={{
           textTransform: "none",
           borderRadius: 2,
