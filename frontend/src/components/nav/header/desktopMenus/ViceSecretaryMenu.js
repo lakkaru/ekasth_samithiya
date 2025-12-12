@@ -86,7 +86,15 @@ const ViceSecretaryMenu = ({ isViceSecretary }) => {
             handleAttendanceMenuClose()
           }}
         >
-          📋 මහා සභාව ලේඛණය
+          📋 මහා සභාව පැමිණීම ලේඛණය
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            navigate("/forms/attendance-vice-secretary")
+            handleAttendanceMenuClose()
+          }}
+        >
+          📋 මහා සභා පැමිණීම - (තහවුරු කිරීම)
         </MenuItem>
         <MenuItem
           onClick={() => {
@@ -94,7 +102,7 @@ const ViceSecretaryMenu = ({ isViceSecretary }) => {
             handleAttendanceMenuClose()
           }}
         >
-          📋 අවමංගල්‍ය පැමිණීම ලේඛණය
+          📋 අවමංගල්‍ය පැමිණීමේ ලේඛණය
         </MenuItem>
         <MenuItem
           onClick={() => {
@@ -102,8 +110,9 @@ const ViceSecretaryMenu = ({ isViceSecretary }) => {
             handleAttendanceMenuClose()
           }}
         >
-          📋 පොදු වැඩ පැමිණීම ලේඛණය
+          📋 පොදු වැඩ පැමිණීමේ ලේඛණය
         </MenuItem>
+        
         <Divider sx={{ my: 1 }} />
         <Typography
           variant="caption"
