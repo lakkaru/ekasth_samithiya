@@ -9,7 +9,6 @@ import {
   Badge,
 } from "@mui/material"
 import {
-  Person as PersonIcon,
   Payment as PaymentIcon,
   MonetizationOn as MonetizationOnIcon,
   AccountBalance as AccountBalanceIcon,
@@ -29,19 +28,6 @@ const UserAccountMenu = ({ memberName, hasLoan, handleLogout }) => {
       <Button
         color="inherit"
         onClick={handleMemberMenuOpen}
-        startIcon={
-          <Avatar
-            sx={{
-              width: 24,
-              height: 24,
-              bgcolor: "white",
-              color: "#667eea",
-              fontSize: "0.75rem",
-            }}
-          >
-            {memberName.charAt(0).toUpperCase()}
-          </Avatar>
-        }
         sx={{
           textTransform: "none",
           backgroundColor: "rgba(255,255,255,0.1)",
@@ -50,8 +36,22 @@ const UserAccountMenu = ({ memberName, hasLoan, handleLogout }) => {
           },
           borderRadius: 3,
           px: 2,
+          display: 'flex',
+          alignItems: 'center'
         }}
       >
+        <Avatar
+          sx={{
+            width: 24,
+            height: 24,
+            bgcolor: "white",
+            color: "#667eea",
+            fontSize: "0.75rem",
+            mr: 1,
+          }}
+        >
+          {memberName.charAt(0).toUpperCase()}
+        </Avatar>
         මගේ ගිණුම
       </Button>
       <Menu

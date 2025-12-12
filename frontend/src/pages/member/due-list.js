@@ -81,7 +81,8 @@ export default function DueList() {
         { id: "member_id", label: "සා.අංකය", minWidth: 80 },
         { id: "name", label: "නම", minWidth: 200 },
         { id: "status", label: "තත්ත්වය", minWidth: 100 },
-        { id: "amount", label: "මුදල", minWidth: 120, align: "right" },
+        { id: "loanInstallment", label: "ණය වාරිකය", minWidth: 120, align: "right" },
+        { id: "amount", label: "හිඟ මුදල", minWidth: 120, align: "right" },
     ]
 
     // Format currency
@@ -95,9 +96,9 @@ export default function DueList() {
 
     // Map member data for table display with color coding
     const tableData = members.map(member => {
-        const isDue = member.totalDue > 0
-        const isExtra = member.totalDue < 0
-        const isZero = member.totalDue === 0
+        const isDue = member.dueWithoutLoan > 0
+        const isExtra = member.dueWithoutLoan < 0
+        const isZero = member.dueWithoutLoan === 0
 
         let statusColor = '#666'
         let statusEmoji = '⚪'
@@ -122,9 +123,16 @@ export default function DueList() {
                     <span>{statusText}</span>
                 </Box>
             ),
+            loanInstallment: member.loanInstallment > 0 ? (
+                <Box sx={{ color: '#1976d2', fontWeight: 'bold' }}>
+                    {formatCurrency(member.loanInstallment)}
+                </Box>
+            ) : (
+                <Box sx={{ color: '#999' }}>-</Box>
+            ),
             amount: (
                 <Box sx={{ color: statusColor, fontWeight: 'bold' }}>
-                    {formatCurrency(member.totalDue)}
+                    {formatCurrency(member.dueWithoutLoan)}
                 </Box>
             ),
             onClick: () => navigate(`/member/fullDetails?memberId=${member.member_id}`)
@@ -132,11 +140,13 @@ export default function DueList() {
     })
 
     // Calculate summary statistics
-    const totalDue = members.filter(m => m.totalDue > 0).reduce((sum, m) => sum + m.totalDue, 0)
-    const totalExtra = members.filter(m => m.totalDue < 0).reduce((sum, m) => sum + Math.abs(m.totalDue), 0)
-    const dueCount = members.filter(m => m.totalDue > 0).length
-    const extraCount = members.filter(m => m.totalDue < 0).length
-    const zeroCount = members.filter(m => m.totalDue === 0).length
+    const totalDue = members.filter(m => m.dueWithoutLoan > 0).reduce((sum, m) => sum + m.dueWithoutLoan, 0)
+    const totalExtra = members.filter(m => m.dueWithoutLoan < 0).reduce((sum, m) => sum + Math.abs(m.dueWithoutLoan), 0)
+    const totalLoanInstallment = members.reduce((sum, m) => sum + (m.loanInstallment || 0), 0)
+    const membersWithLoans = members.filter(m => (m.loanInstallment || 0) > 0).length
+    const dueCount = members.filter(m => m.dueWithoutLoan > 0).length
+    const extraCount = members.filter(m => m.dueWithoutLoan < 0).length
+    const zeroCount = members.filter(m => m.dueWithoutLoan === 0).length
 
     return (
         <Layout>
@@ -177,19 +187,19 @@ export default function DueList() {
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
                             <Box>
                                 <Typography variant="body2" color="text.secondary">මුළු සාමාජිකයන්</Typography>
-                                <Typography variant="h6">{members.length} දෙනා</Typography>
+                                <Typography variant="h6">{members.length} කි</Typography>
                             </Box>
                             <Box>
                                 <Typography variant="body2" color="text.secondary">හිඟ ඇති සාමාජිකයන්</Typography>
-                                <Typography variant="h6" sx={{ color: '#d32f2f' }}>🔴 {dueCount} දෙනා</Typography>
+                                <Typography variant="h6" sx={{ color: '#d32f2f' }}>🔴 {dueCount} කි</Typography>
                             </Box>
                             <Box>
                                 <Typography variant="body2" color="text.secondary">ඉතිරි ඇති සාමාජිකයන්</Typography>
-                                <Typography variant="h6" sx={{ color: '#2e7d32' }}>🟢 {extraCount} දෙනා</Typography>
+                                <Typography variant="h6" sx={{ color: '#2e7d32' }}>🟢 {extraCount} කි</Typography>
                             </Box>
                             <Box>
                                 <Typography variant="body2" color="text.secondary">හිඟ නැති සාමාජිකයන්</Typography>
-                                <Typography variant="h6">⚪ {zeroCount} දෙනා</Typography>
+                                <Typography variant="h6">⚪ {zeroCount} කි</Typography>
                             </Box>
                         </Box>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mt: 2, pt: 2, borderTop: '1px solid #ddd' }}>
@@ -201,6 +211,12 @@ export default function DueList() {
                                 <Typography variant="body2" color="text.secondary">මුළු ඉතිරි මුදල</Typography>
                                 <Typography variant="h6" sx={{ color: '#2e7d32' }}>{formatCurrency(totalExtra)}</Typography>
                             </Box>
+                            {totalLoanInstallment > 0 && (
+                                <Box>
+                                    <Typography variant="body2" color="text.secondary">මුළු ණය වාරික ({membersWithLoans} දෙනා)</Typography>
+                                    <Typography variant="h6" sx={{ color: '#1976d2' }}>{formatCurrency(totalLoanInstallment)}</Typography>
+                                </Box>
+                            )}
                         </Box>
                     </Paper>
 

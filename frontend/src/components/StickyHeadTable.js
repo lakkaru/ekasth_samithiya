@@ -76,25 +76,34 @@ export default function StickyHeadTable({
                     onClick={() => row.onClick && row.onClick()}
                     sx={{
                       border: borders ? "1px solid black" : "none",
-                      borderBottom: "1px solid rgba(224, 224, 224, 1)",
+                      borderBottom: isLastRow 
+                        ? "2px solid rgba(224, 224, 224, 1)" 
+                        : "1px solid rgba(224, 224, 224, 0.5)",
                       cursor: row.onClick ? "pointer" : "default",
                       fontWeight: isLastRow ? "bold" : "normal",
                       backgroundColor: isLastRow
                         ? totalRow
-                          ? "teal"
-                          : "inherit"
+                          ? "#00897b"
+                          : "#f5f5f5"
                         : "inherit",
                       color: isLastRow
                         ? totalRow
                           ? "white"
                           : "inherit"
                         : "inherit",
-                      "& .MuiTableCell-root": {
-                        color: isLastRow
+                      "&:hover": {
+                        backgroundColor: isLastRow
                           ? totalRow
-                            ? "white"
-                            : "inherit"
-                          : "inherit",
+                            ? "#00695c !important"
+                            : "#eeeeee !important"
+                          : "rgba(0, 0, 0, 0.04) !important",
+                      },
+                      "&:hover .MuiTableCell-root": {
+                        color: isLastRow && totalRow ? "white !important" : "inherit",
+                      },
+                      "& .MuiTableCell-root": {
+                        color: isLastRow && totalRow ? "white" : "inherit",
+                        fontSize: isLastRow ? "0.95rem" : "0.875rem",
                       },
                     }}
                   >

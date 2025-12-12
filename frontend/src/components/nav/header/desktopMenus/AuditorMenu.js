@@ -6,12 +6,7 @@ import {
   MenuItem,
   Divider,
 } from "@mui/material"
-import {
-  Assessment as AssessmentIcon,
-  MonetizationOn as MonetizationOnIcon,
-  Person as PersonIcon,
-  AccountBalance as AccountBalanceIcon,
-} from "@mui/icons-material"
+// Icons removed from startIcon props to simplify menu buttons
 
 const AuditorMenu = ({ isAuditor }) => {
   const [accountAnchorEl, setAccountAnchorEl] = useState(null)
@@ -33,7 +28,6 @@ const AuditorMenu = ({ isAuditor }) => {
         color="inherit"
         variant="outlined"
         onClick={() => navigate("/member/fullDetails")}
-        startIcon={<PersonIcon />}
         sx={{
           textTransform: "none",
           borderColor: "rgba(255,255,255,0.3)",
@@ -51,7 +45,6 @@ const AuditorMenu = ({ isAuditor }) => {
         variant="outlined"
         color="inherit"
         onClick={handleLoanMenuOpen}
-        startIcon={<MonetizationOnIcon />}
         sx={{
           textTransform: "none",
           borderColor: "rgba(255,255,255,0.3)",
@@ -108,7 +101,6 @@ const AuditorMenu = ({ isAuditor }) => {
         color="inherit"
         variant="outlined"
         onClick={handleAccountMenuOpen}
-        startIcon={<AccountBalanceIcon />}
         sx={{
           textTransform: "none",
           borderColor: "rgba(255,255,255,0.3)",
@@ -183,7 +175,6 @@ const AuditorMenu = ({ isAuditor }) => {
         variant="outlined"
         color="inherit"
         onClick={handleFuneralMenuOpen}
-        startIcon={<AssessmentIcon />}
         sx={{
           textTransform: "none",
           borderColor: "rgba(255,255,255,0.3)",

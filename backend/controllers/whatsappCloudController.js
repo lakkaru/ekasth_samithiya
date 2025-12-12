@@ -3,6 +3,62 @@ const Member = require('../models/Member');
 const MembershipPayment = require('../models/MembershipPayment');
 const FinePayment = require('../models/FinePayment');
 const Meeting = require('../models/Meeting');
+const Loan = require('../models/Loan');
+const LoanInterestPayment = require('../models/LoanInterestPayment');
+
+// Interest calculation function (copied from memberController)
+async function interestCalculation(loanDate, remainingAmount, lastIntPaymentDate, paymentDate) {
+  if (!loanDate || !remainingAmount || !paymentDate)
+    return { int: 0, penInt: 0 };
+  const loanDateObj = new Date(loanDate);
+  const lastIntPayDateObj = new Date(lastIntPaymentDate || loanDate);
+  const currentDate = new Date(paymentDate);
+  const monthlyInterestRate = 0.03;
+  const loanPeriodMonths = 10;
+
+  let totalMonths =
+    (currentDate.getFullYear() - loanDateObj.getFullYear()) * 12 +
+    (currentDate.getMonth() - loanDateObj.getMonth());
+  if (currentDate.getDate() - loanDateObj.getDate() > 0) {
+    totalMonths = totalMonths + 1;
+  }
+  let loanInstallment = 0;
+  let principleShouldPay = (10000 / 10) * totalMonths;
+  let totalPrinciplePaid = 10000 - remainingAmount;
+  if (totalPrinciplePaid >= principleShouldPay) {
+    loanInstallment = 0;
+  }
+  else if (totalMonths <= 10) {
+    loanInstallment = totalMonths * 1000 - (10000 - remainingAmount);
+  } else {
+    loanInstallment = remainingAmount;
+  }
+
+  let lastPaymentMonths =
+    (lastIntPayDateObj.getFullYear() - loanDateObj.getFullYear()) * 12 +
+    (lastIntPayDateObj.getMonth() - loanDateObj.getMonth());
+  if (lastIntPayDateObj.getDate() - loanDateObj.getDate() > 0) {
+    lastPaymentMonths = lastPaymentMonths + 1;
+  }
+
+  const interestUnpaidMonths = Math.max(totalMonths - lastPaymentMonths, 0);
+  let penaltyMonths = 0;
+  if (totalMonths > 10) {
+    const dueMonths = totalMonths - loanPeriodMonths;
+    if (interestUnpaidMonths > dueMonths) {
+      penaltyMonths = dueMonths;
+    } else {
+      penaltyMonths = interestUnpaidMonths;
+    }
+  }
+  const interest = remainingAmount * interestUnpaidMonths * monthlyInterestRate;
+  const penaltyInterest = remainingAmount * penaltyMonths * monthlyInterestRate;
+  return {
+    int: Math.round(interest),
+    penInt: Math.round(penaltyInterest),
+    installment: Math.round(loanInstallment + interest + penaltyInterest),
+  };
+}
 
 // Helper to normalize and try to find member by incoming number
 async function findMemberByIncomingNumber(incoming) {
@@ -60,15 +116,48 @@ async function buildBalanceText(member) {
   const fineDue = fineTotal - totalFinePaid;
 
   const previousDueVal = member.previousDue || 0;
-  const totalOutstanding = membershipDue + fineDue + previousDueVal;
+  
+  // Get loan installment if applicable
+  const loan = await Loan.findOne({
+    memberId: member._id,
+    loanRemainingAmount: { $gt: 0 }
+  }).select('loanDate loanRemainingAmount');
+
+  let loanInstallment = 0;
+  if (loan) {
+    const lastIntPayment = await LoanInterestPayment.findOne({
+      loanId: loan._id
+    }).sort({ date: -1 }).select('date');
+
+    const calculatedInterest = await interestCalculation(
+      loan.loanDate,
+      loan.loanRemainingAmount,
+      lastIntPayment?.date,
+      new Date()
+    );
+    
+    // Only include installment if there are unpaid months
+    if (calculatedInterest?.int > 0 || calculatedInterest?.penInt > 0) {
+      loanInstallment = calculatedInterest.installment || 0;
+    }
+  }
+
+  const dueWithoutLoan = membershipDue + fineDue + previousDueVal;
+  const totalOutstanding = dueWithoutLoan + loanInstallment;
 
   // Dynamic label for previous due
   const prevDueLabel = previousDueVal < 0 ? `${prevYear} ඉතිරිය` : `${prevYear} හිඟ`;
 
-  // Dynamic label for Total Outstanding
-  const totalLabel = totalOutstanding < 0 ? 'මුළු ඉතිරිය' : 'මුළු හිඟ';
+  // Dynamic label for Due without loan
+  const dueLabel = dueWithoutLoan < 0 ? 'මුදල් ඉතිරිය' : 'මුදල් හිඟ';
 
-  return `👤 ${member.name}\n🆔 සා.අංකය: ${member.member_id}\n\n=== 💰 මුදල් තත්ත්වය ===\n\n💳 සාමාජිකත්ව හිඟ: ${formatCurrency(membershipDue)}\n⚠️ දඩ හිඟ: ${formatCurrency(fineDue)}\n📅 ${prevDueLabel}: ${formatCurrency(previousDueVal)}\n\n━━━━━━━━━━━━━━━\n💵 ${totalLabel}: ${formatCurrency(totalOutstanding)}`;
+  let message = `👤 ${member.name}\n🆔 සා.අංකය: ${member.member_id}\n\n=== 💰 මුදල් තත්ත්වය ===\n\n💳 සාමාජිකත්ව හිඟ: ${formatCurrency(membershipDue)}\n⚠️ දඩ හිඟ: ${formatCurrency(fineDue)}\n📅 ${prevDueLabel}: ${formatCurrency(previousDueVal)}\n\n━━━━━━━━━━━━━━━\n💵 ${dueLabel}: ${formatCurrency(dueWithoutLoan)}`;
+  
+  if (loanInstallment > 0) {
+    message += `\n🏦 ණය වාරිකය: ${formatCurrency(loanInstallment)}`;
+  }
+
+  return message;
 }
 
 async function buildAbsencesText(member) {

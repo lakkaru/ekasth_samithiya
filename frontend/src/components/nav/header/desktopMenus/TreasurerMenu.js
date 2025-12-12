@@ -6,11 +6,7 @@ import {
   MenuItem,
   Divider,
 } from "@mui/material"
-import {
-  Payment as PaymentIcon,
-  MonetizationOn as MonetizationOnIcon,
-  Person as PersonIcon,
-} from "@mui/icons-material"
+// Icons removed from startIcon props to simplify menu buttons
 
 const TreasurerMenu = ({ isTreasurer }) => {
   const [moneyAnchorEl, setMoneyAnchorEl] = useState(null)
@@ -40,7 +36,6 @@ const TreasurerMenu = ({ isTreasurer }) => {
       <Button
         color="inherit"
         onClick={handleMoneyMenuOpen}
-        startIcon={<PaymentIcon />}
         sx={{
           textTransform: "none",
           backgroundColor: "rgba(255,255,255,0.1)",
@@ -229,7 +224,6 @@ const TreasurerMenu = ({ isTreasurer }) => {
       <Button
         color="inherit"
         onClick={handleFuneralMenuOpen}
-        startIcon={<MonetizationOnIcon />}
         sx={{
           textTransform: "none",
           backgroundColor: "rgba(255,255,255,0.1)",
@@ -276,7 +270,6 @@ const TreasurerMenu = ({ isTreasurer }) => {
       <Button
         color="inherit"
         onClick={handleMemberInfoMenuOpen}
-        startIcon={<PersonIcon />}
         sx={{
           textTransform: "none",
           backgroundColor: "rgba(255,255,255,0.1)",

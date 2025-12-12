@@ -1,12 +1,7 @@
 import React from "react"
 import { navigate } from "gatsby"
 import { Button, Divider } from "@mui/material"
-import {
-  Person as PersonIcon,
-  AccountBalance as AccountBalanceIcon,
-  Groups as GroupsIcon,
-  Assessment as AssessmentIcon,
-} from "@mui/icons-material"
+// Icons removed from startIcon props to simplify menu buttons
 
 export default function ChairmanMenu({ isChairman }) {
   if (!isChairman) return null
@@ -16,7 +11,6 @@ export default function ChairmanMenu({ isChairman }) {
       <Button
         color="inherit"
         onClick={() => navigate("/member/fullDetails")}
-        startIcon={<PersonIcon />}
         sx={{
           textTransform: "none",
           backgroundColor: "rgba(255,255,255,0.1)",
@@ -32,7 +26,6 @@ export default function ChairmanMenu({ isChairman }) {
       <Button
         color="inherit"
         onClick={() => navigate("/loan/active-loans")}
-        startIcon={<AccountBalanceIcon />}
         sx={{
           textTransform: "none",
           backgroundColor: "rgba(255,255,255,0.1)",
@@ -48,7 +41,6 @@ export default function ChairmanMenu({ isChairman }) {
       <Button
         color="inherit"
         onClick={() => navigate("/reports/meetingAttendance")}
-        startIcon={<GroupsIcon />}
         sx={{
           textTransform: "none",
           backgroundColor: "rgba(255,255,255,0.1)",
@@ -64,7 +56,6 @@ export default function ChairmanMenu({ isChairman }) {
       <Button
         color="inherit"
         onClick={() => navigate("/account/monthly-report")}
-        startIcon={<AssessmentIcon />}
         sx={{
           textTransform: "none",
           backgroundColor: "rgba(255,255,255,0.1)",

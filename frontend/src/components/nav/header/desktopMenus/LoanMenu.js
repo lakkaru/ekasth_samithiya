@@ -1,7 +1,6 @@
 import React, { useState } from "react"
 import { navigate } from "gatsby"
 import { Button, Menu, MenuItem, Divider } from "@mui/material"
-import { MonetizationOn as MonetizationOnIcon, Person as PersonIcon } from "@mui/icons-material"
 
 export default function LoanMenu({ hasLoanAccess, isLoanTreasurer, isTreasurer }) {
   const [loanSchemeAnchorEl, setLoanSchemeAnchorEl] = useState(null)
@@ -19,7 +18,6 @@ export default function LoanMenu({ hasLoanAccess, isLoanTreasurer, isTreasurer }
         <Button
           color="inherit"
           onClick={() => navigate("/member/fullDetails")}
-          startIcon={<PersonIcon />}
           sx={{
             textTransform: "none",
             backgroundColor: "rgba(255,255,255,0.1)",
@@ -36,7 +34,6 @@ export default function LoanMenu({ hasLoanAccess, isLoanTreasurer, isTreasurer }
       <Button
         color="inherit"
         onClick={handleLoanSchemeMenuOpen}
-        startIcon={<MonetizationOnIcon />}
         sx={{
           textTransform: "none",
           backgroundColor: "rgba(255,255,255,0.1)",

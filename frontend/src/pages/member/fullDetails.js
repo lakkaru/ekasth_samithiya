@@ -263,6 +263,11 @@ export default function FullDetails() {
           <Typography sx={{ fontWeight: 800, fontSize: { xs: '.8rem', sm: '1.1rem' }, color: member.currentMembershipDue < 0 ? 'green' : 'orange' }}>
             {member.currentMembershipDue < 0 ? `සාමාජික මුදල් ඉතිරිය රු. ${Math.abs(member.currentMembershipDue)}` : `සාමාජික මුදල් හිඟ රු. ${Math.abs(member.currentMembershipDue || 0)}`}
           </Typography>
+          {member.loanInfo?.calculatedInterest?.installment > 0 && (
+            <Typography sx={{ fontWeight: 800, fontSize: { xs: '.8rem', sm: '1.1rem' }, color: '#1976d2' }}>
+              ණය වාරිකය රු. {member.loanInfo.calculatedInterest.installment}
+            </Typography>
+          )}
           <Typography sx={{ fontWeight: 800, fontSize: { xs: '.8rem', sm: '1.1rem' }, color: member.totalDue < 0 ? 'green' : 'orange' }}>
             {member.totalDue < 0 ? `ඉතිරි මුදල රු. ${Math.abs(member.totalDue)}` : `හිඟ එකතුව රු. ${Math.abs(member.totalDue || 0)}`}
           </Typography>
@@ -287,15 +292,29 @@ export default function FullDetails() {
         Object.keys(member.fines)
           .sort((a, b) => b - a) // Sort years in descending order
           .map(year => (
-            <Box key={year} sx={{ marginBottom: "20px" }}>
+            <Box key={year} sx={{ marginBottom: "30px" }}>
               <Typography
                 variant="h6"
                 align="center"
-                sx={{ marginBottom: "10px" }}
+                sx={{ 
+                  marginBottom: "15px",
+                  fontWeight: "bold",
+                  color: "#00897b",
+                  backgroundColor: "#e0f2f1",
+                  padding: "10px",
+                  borderRadius: "8px"
+                }}
               >
                 {year} - වසරේ දඩ මුදල්
               </Typography>
-              <Paper elevation={3} sx={{ padding: "20px" }}>
+              <Paper 
+                elevation={4} 
+                sx={{ 
+                  padding: "20px",
+                  borderRadius: "12px",
+                  border: "1px solid #e0e0e0"
+                }}
+              >
                 <StickyHeadTable
                   columnsArray={finesColumnsArray}
                   dataArray={member.fines[year]?.fines || []} // Access fines data through member.fines
@@ -309,15 +328,29 @@ export default function FullDetails() {
         Object.keys(member.groupedPayments)
           .sort((a, b) => b - a) // Sort years in descending order
           .map(year => (
-            <Box key={year} sx={{ marginBottom: "20px" }}>
+            <Box key={year} sx={{ marginBottom: "30px" }}>
               <Typography
                 variant="h6"
                 align="center"
-                sx={{ marginBottom: "10px" }}
+                sx={{ 
+                  marginBottom: "15px",
+                  fontWeight: "bold",
+                  color: "#1976d2",
+                  backgroundColor: "#e3f2fd",
+                  padding: "10px",
+                  borderRadius: "8px"
+                }}
               >
                 {year} - වසරේ ගෙවීම්
               </Typography>
-              <Paper elevation={3} sx={{ padding: "20px" }}>
+              <Paper 
+                elevation={4} 
+                sx={{ 
+                  padding: "20px",
+                  borderRadius: "12px",
+                  border: "1px solid #e0e0e0"
+                }}
+              >
                 <StickyHeadTable
                   columnsArray={paymentsColumnsArray}
                   dataArray={member.groupedPayments[year]?.payments || []} // Ensure `payments` is defined

@@ -14,6 +14,7 @@ const MembershipPayment = require("../models/MembershipPayment");
 const FinePayment = require("../models/FinePayment");
 const Funeral = require("../models/Funeral");
 const Meeting = require("../models/Meeting");
+const CommonWork = require("../models/CommonWork");
 
 // Environment variable for JWT secret
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -173,9 +174,14 @@ async function getAllFinesOfMember(member_Id) {
 
         if (
           fineType === "funeral" ||
-          fineType === "extraDue" ||
           fineType === "funeral-ceremony"
         ) {
+          // Skip if eventId is null or invalid
+          if (!fine.eventId) {
+            console.error(`Missing eventId for fine type: ${fineType}`);
+            return null;
+          }
+
           const funeral = await Funeral.findById(fine.eventId)
             .select("date member_id")
             .populate("member_id", "name area");
@@ -190,8 +196,6 @@ async function getAllFinesOfMember(member_Id) {
 
           if (fineType === "funeral") {
             fineDescription = `${funeral.member_id?.area} ${funeral.member_id?.name} ගේ සාමාජිකත්වය යටතේ අවමංගල්‍ය `;
-          } else if (fineType === "extraDue") {
-            fineDescription = `${funeral.member_id?.area} ${funeral.member_id?.name} ගේ සාමාජිකත්වය යටතේ අවමංගල්‍යයට අතිරේක ආධාර `;
           } else if (fineType === "funeral-ceremony") {
             fineDescription = `${funeral.member_id?.area} ${funeral.member_id?.name} ගේ සාමාජිකත්වය යටතේ අවමංගල්‍යයට දේහය ගෙන යාම`;
           }
@@ -203,6 +207,38 @@ async function getAllFinesOfMember(member_Id) {
             // name: funeral.member_id?.name || "Unknown",
             // area: funeral.member_id?.area || "Unknown",
           };
+        } else if (fineType === "extraDue") {
+          // Handle extraDue fines (may or may not have eventId)
+          if (fine.eventId) {
+            const funeral = await Funeral.findById(fine.eventId)
+              .select("date member_id")
+              .populate("member_id", "name area");
+            
+            if (funeral) {
+              date = new Date(funeral.date).toISOString().split("T")[0];
+              fineDetails = {
+                date,
+                fineType: `අතිරේක ආධාර හිඟ - ${funeral.member_id?.area} ${funeral.member_id?.name} (අවමංගල්‍යය)`,
+                fineAmount,
+              };
+            } else {
+              // Funeral not found, use fine date
+              date = fine.date ? new Date(fine.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
+              fineDetails = {
+                date,
+                fineType: "අතිරේක ආධාර හිඟ මුදල (බලප්‍රදේශයෙන් පිට අවමංගල්‍යය)",
+                fineAmount,
+              };
+            }
+          } else {
+            // No eventId, use fine date
+            date = fine.date ? new Date(fine.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
+            fineDetails = {
+              date,
+              fineType: "අතිරේක ආධාර හිඟ මුදල (බලප්‍රදේශයෙන් පිට අවමංගල්‍යය)",
+              fineAmount,
+            };
+          }
         } else if (fineType === "meeting") {
           const meeting = await Meeting.findById(fine.eventId).select("date");
 
@@ -218,6 +254,37 @@ async function getAllFinesOfMember(member_Id) {
             fineType: `දින මහා සභාව වන විට මහා සභා වාර තුනක් නොපැමිණීම. `,
             fineAmount,
           };
+        } else if (fineType === "common-work") {
+          // Handle common-work fines with eventId lookup
+          if (fine.eventId) {
+            const commonWork = await CommonWork.findById(fine.eventId)
+              .select("date title");
+            
+            if (commonWork) {
+              date = new Date(commonWork.date).toISOString().split("T")[0];
+              fineDetails = {
+                date,
+                fineType: `පොදු වැඩ නොපැමිණීම - ${commonWork.title}`,
+                fineAmount,
+              };
+            } else {
+              // CommonWork not found, use fine date
+              date = fine.date ? new Date(fine.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
+              fineDetails = {
+                date,
+                fineType: "පොදු වැඩ නොපැමිණීම",
+                fineAmount,
+              };
+            }
+          } else {
+            // No eventId, use fine date
+            date = fine.date ? new Date(fine.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
+            fineDetails = {
+              date,
+              fineType: "පොදු වැඩ නොපැමිණීම",
+              fineAmount,
+            };
+          }
         } else {
           console.error(`Unknown fine type: ${fineType}`);
           return null;
@@ -2800,13 +2867,41 @@ exports.getAllMembersDue = async (req, res) => {
                 const totalFinePaid = finePayments.reduce((s, p) => s + (p.amount || 0), 0);
                 const fineDue = fineTotal - totalFinePaid;
 
+                // Get loan installment if applicable
+                const loan = await Loan.findOne({
+                    memberId: member._id,
+                    loanRemainingAmount: { $gt: 0 }
+                }).select('loanDate loanRemainingAmount');
+
+                let loanInstallment = 0;
+                if (loan) {
+                    const lastIntPayment = await LoanInterestPayment.findOne({
+                        loanId: loan._id
+                    }).sort({ date: -1 }).select('date');
+
+                    const calculatedInterest = await interestCalculation(
+                        loan.loanDate,
+                        loan.loanRemainingAmount,
+                        lastIntPayment?.date,
+                        new Date()
+                    );
+                    
+                    // Only include installment if there are unpaid months
+                    if (calculatedInterest?.int > 0 || calculatedInterest?.penInt > 0) {
+                        loanInstallment = calculatedInterest.installment || 0;
+                    }
+                }
+
                 // Add previous due
                 const previousDueVal = member.previousDue || 0;
-                const totalOutstanding = membershipDue + fineDue + previousDueVal;
+                const dueWithoutLoan = membershipDue + fineDue + previousDueVal;
+                const totalOutstanding = dueWithoutLoan + loanInstallment;
 
                 return {
                     member_id: member.member_id,
                     name: member.name,
+                    dueWithoutLoan: dueWithoutLoan,
+                    loanInstallment: loanInstallment,
                     totalDue: totalOutstanding
                 };
             })

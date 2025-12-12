@@ -7,12 +7,7 @@ import {
   Divider,
   Typography,
 } from "@mui/material"
-import {
-  Groups as GroupsIcon,
-  MonetizationOn as MonetizationOnIcon,
-  Person as PersonIcon,
-  WhatsApp as WhatsAppIcon,
-} from "@mui/icons-material"
+import { Groups as GroupsIcon } from "@mui/icons-material"
 
 const ViceSecretaryMenu = ({ isViceSecretary }) => {
   const [attendanceAnchorEl, setAttendanceAnchorEl] = useState(null)
@@ -37,7 +32,6 @@ const ViceSecretaryMenu = ({ isViceSecretary }) => {
         variant="outlined"
         color="inherit"
         onClick={handleAttendanceMenuOpen}
-        startIcon={<GroupsIcon />}
         sx={{
           textTransform: "none",
           borderColor: "rgba(255,255,255,0.3)",
@@ -186,7 +180,6 @@ const ViceSecretaryMenu = ({ isViceSecretary }) => {
         color="inherit"
         variant="outlined"
         onClick={handleMembershipMenuOpen}
-        startIcon={<MonetizationOnIcon />}
         sx={{
           textTransform: "none",
           borderColor: "rgba(255,255,255,0.3)",
@@ -268,7 +261,6 @@ const ViceSecretaryMenu = ({ isViceSecretary }) => {
         color="inherit"
         variant="outlined"
         onClick={handleMemberInfoMenuOpen}
-        startIcon={<PersonIcon />}
         sx={{
           textTransform: "none",
           borderColor: "rgba(255,255,255,0.3)",
@@ -325,7 +317,6 @@ const ViceSecretaryMenu = ({ isViceSecretary }) => {
         color="inherit"
         variant="outlined"
         onClick={() => navigate("/admin/whatsapp-bot")}
-        startIcon={<WhatsAppIcon />}
         sx={{
           textTransform: "none",
           borderColor: "rgba(255,255,255,0.3)",
@@ -343,7 +334,6 @@ const ViceSecretaryMenu = ({ isViceSecretary }) => {
         color="inherit"
         variant="outlined"
         onClick={handleMembershipViceSecMenuOpen}
-        startIcon={<GroupsIcon />}
         sx={{
           textTransform: "none",
           borderColor: "rgba(255,255,255,0.3)",
