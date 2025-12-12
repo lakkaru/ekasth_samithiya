@@ -263,6 +263,11 @@ export default function FullDetails() {
           <Typography sx={{ fontWeight: 800, fontSize: { xs: '.8rem', sm: '1.1rem' }, color: member.currentMembershipDue < 0 ? 'green' : 'orange' }}>
             {member.currentMembershipDue < 0 ? `සාමාජික මුදල් ඉතිරිය රු. ${Math.abs(member.currentMembershipDue)}` : `සාමාජික මුදල් හිඟ රු. ${Math.abs(member.currentMembershipDue || 0)}`}
           </Typography>
+          {member.loanInfo?.calculatedInterest?.installment > 0 && (
+            <Typography sx={{ fontWeight: 800, fontSize: { xs: '.8rem', sm: '1.1rem' }, color: '#1976d2' }}>
+              ණය වාරිකය රු. {member.loanInfo.calculatedInterest.installment}
+            </Typography>
+          )}
           <Typography sx={{ fontWeight: 800, fontSize: { xs: '.8rem', sm: '1.1rem' }, color: member.totalDue < 0 ? 'green' : 'orange' }}>
             {member.totalDue < 0 ? `ඉතිරි මුදල රු. ${Math.abs(member.totalDue)}` : `හිඟ එකතුව රු. ${Math.abs(member.totalDue || 0)}`}
           </Typography>
