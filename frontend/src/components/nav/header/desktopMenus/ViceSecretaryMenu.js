@@ -322,22 +322,7 @@ const ViceSecretaryMenu = ({ isViceSecretary }) => {
         </MenuItem>
       </Menu>
 
-      <Button
-        color="inherit"
-        variant="outlined"
-        onClick={() => navigate("/admin/whatsapp-bot")}
-        sx={{
-          textTransform: "none",
-          borderColor: "rgba(255,255,255,0.3)",
-          backgroundColor: "rgba(255,255,255,0.1)",
-          "&:hover": {
-            borderColor: "rgba(255,255,255,0.5)",
-            backgroundColor: "rgba(255,255,255,0.2)",
-          },
-        }}
-      >
-        WhatsApp Bot
-      </Button>
+      
 
       <Button
         color="inherit"
