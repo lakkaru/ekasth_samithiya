@@ -15,18 +15,17 @@ const FinePayment = require("../models/FinePayment");
 const Funeral = require("../models/Funeral");
 const Meeting = require("../models/Meeting");
 const CommonWork = require("../models/CommonWork");
+const SystemSettings = require("../models/SystemSettings");
 
 // Environment variable for JWT secret
 const JWT_SECRET = process.env.JWT_SECRET;
-
-const monthlyMembership2025 = 300;
 
 //getting all info about member and dependents
 async function getMembershipDetails(member_id) {
   const member = await Member.findOne({ member_id: member_id })
     .populate("dependents", "name relationship dateOfDeath") // Populate dependents with necessary fields
     .select(
-      "_id member_id name dateOfDeath dependents area  status siblingsCount previousDue"
+      "_id member_id name dateOfDeath dependents area status siblingsCount previousDue deactivated_at"
     );
 
   if (!member) {
@@ -1587,10 +1586,15 @@ exports.getMemberAllInfoById = async (req, res) => {
   try {
     const { member_id, exclude_loan_installment } = req.query;
     const member = await getMembershipDetails(member_id);
+    if (!member) {
+      return res.status(404).json({ message: "Member not found", memberData: null });
+    }
     const member_Id = member._id;
+    // Get monthly membership rate from system settings (fallback to 300 if not set)
+    const monthlyRate = await SystemSettings.getSettingValue('MONTHLY_MEMBERSHIP_RATE', 300);
     const membershipRate = await membershipRateForMember(
       member.siblingsCount,
-      monthlyMembership2025
+      monthlyRate
     );
 
     const totalMembershipPayment = await getTotalMembershipPayment(

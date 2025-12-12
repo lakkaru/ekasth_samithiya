@@ -49,7 +49,7 @@ export default function StickyHeadTable({
               {columnsArray.map(column => (
                 <TableCell
                   key={column.id}
-                  align={headingAlignment || "right"}
+                  align={column.align || headingAlignment || "right"}
                   sx={{
                     padding: "4px",
                     border: headBorder ? "1px solid black" : "none",
@@ -112,7 +112,7 @@ export default function StickyHeadTable({
                       return (
                         <TableCell
                           key={column.id}
-                          align={dataAlignment || "right"}
+                          align={column.align || dataAlignment || "right"}
                           sx={{
                             padding: "4px",
                             borderLeft: borders ? ".5px solid black" : "none",

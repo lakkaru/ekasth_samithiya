@@ -26,6 +26,8 @@ export default function FullDetails() {
 
   const [memberId, setMemberId] = useState("")
   const [member, setMember] = useState({})
+  const [hasSearched, setHasSearched] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
 
   // Check for memberId in URL parameters and auto-fetch member data
   useEffect(() => {
@@ -34,49 +36,63 @@ export default function FullDetails() {
       const memberIdFromUrl = params.get('memberId')
       if (memberIdFromUrl) {
         setMemberId(memberIdFromUrl)
+        setIsSearching(true)
         // Fetch member data automatically
         api
           .get(`${baseUrl}/member/getMemberAllInfoById?member_id=${memberIdFromUrl}`)
           .then(response => {
             const member = response?.data?.memberData || {}
             setMember(member || {})
+            setHasSearched(true)
+            setIsSearching(false)
           })
           .catch(error => {
             console.error("Axios error: ", error)
+            // mark that we attempted a search via URL even if it failed
+            setHasSearched(true)
+            setIsSearching(false)
           })
       }
     }
   }, [])
 
   // Normalize and parse deactivated date from various possible shapes
+  // Only treat member as deactivated when the field parses to a valid date.
   const getDeactivatedInfo = (m) => {
     if (!m) return { isDeactivated: false, dateText: null }
-    console.log('member ,', m)
     const raw = m.deactivated_at ?? m.memberDetails?.deactivated_at ?? m.memberDetails?.deactivatedAt ?? m.memberDetails?.member?.deactivated_at
     if (!raw) return { isDeactivated: false, dateText: null }
 
+    // Normalize different shapes returned by Mongo/JSON
     let iso = null
     if (typeof raw === 'string') iso = raw
     else if (raw instanceof Date) iso = raw.toISOString()
     else if (raw && raw.$date) {
-      // $date can be string or object with $numberLong
       if (typeof raw.$date === 'string') iso = raw.$date
       else if (raw.$date && raw.$date.$numberLong) iso = Number(raw.$date.$numberLong)
       else iso = String(raw.$date)
     } else if (raw && raw.$numberLong) {
       iso = Number(raw.$numberLong)
+    } else if (typeof raw === 'number') {
+      iso = raw
     } else {
       iso = String(raw)
     }
 
     const dateObj = new Date(iso)
-    if (isNaN(dateObj)) return { isDeactivated: true, dateText: null }
+    // If parsing failed, do NOT consider the member deactivated (avoids showing "Deactivated: Active" for non-date values)
+    if (isNaN(dateObj)) return { isDeactivated: false, dateText: null }
+
     return { isDeactivated: true, dateText: dateObj.toLocaleDateString(), dateObj }
   }
 
   const [loan, setLoan] = useState(null)
   const [earlyPayments, setEarlyPayments] = useState([])
   const [calculatedInterest, setCalculatedInterest] = useState(null)
+
+  // background color for member info: use warning tint only for deactivated members
+  const deactInfo = getDeactivatedInfo(member)
+  const memberWarningBg = deactInfo.isDeactivated ? '#f48b7bff' : '#f5f7fa'
 
   const handleAuthStateChange = ({ isAuthenticated, roles }) => {
     setIsAuthenticated(isAuthenticated)
@@ -88,13 +104,15 @@ export default function FullDetails() {
   }
 
   const getMemberById = e => {
-    // console.log("search:", memberId)
+    // mark that a search was performed
+    setHasSearched(true)
+    setIsSearching(true)
     api
       .get(`${baseUrl}/member/getMemberAllInfoById?member_id=${memberId}`)
       .then(response => {
-        // console.log("memberData:", response?.data?.memberData)
         const member = response?.data?.memberData || {}
         setMember(member || {})
+        setIsSearching(false)
         //getting loan info of the member
         // api
         // .get(`${baseUrl}/member/memberLoan?member_id=${member.memberDetails._id}`)
@@ -109,7 +127,15 @@ export default function FullDetails() {
         // })
       })
       .catch(error => {
-        console.error("Axios error: ", error)
+        // If backend returns 404 (member not found) or other error, set empty member and keep hasSearched true
+        if (error?.response?.status === 404) {
+          setMember({})
+        } else {
+          console.error("Axios error: ", error)
+          setMember({})
+        }
+        setHasSearched(true)
+        setIsSearching(false)
       })
   }
 
@@ -130,15 +156,30 @@ export default function FullDetails() {
         death: dependent.dateOfDeath != null ? "මිය ගොස් ඇත" : "",
       }
     }) || []
+  // format currency in LKR (Sinhala locale)
+  const formatCurrency = (v) => new Intl.NumberFormat("si-LK", { style: "currency", currency: "LKR" }).format(v || 0)
+  // Expected membership payment up to current month (month index is 0-based)
+  const monthsElapsed = new Date().getMonth() // 0 for Jan
+  const expectedMembershipPayment = (member.membershipRate || 0) * monthsElapsed
   const paymentsColumnsArray = [
-    { id: "date", label: "දිනය", minWidth: 50 },
-    { id: "memAmount", label: "සාමාජික මුදල් ගෙවීම්", minWidth: 50 },
-    { id: "fineAmount", label: "දඩ මුදල් ගෙවීම්", minWidth: 50 },
+    { id: "date", label: "දිනය", minWidth: 50, align: "center" },
+    {
+      id: "memAmount",
+      label: (
+        <>
+          <div>සාමාජික මුදල් ගෙවීම්</div>
+          <div style={{ fontSize: '0.85rem', fontWeight: 400 }}>{`(${formatCurrency(expectedMembershipPayment)})`}</div>
+        </>
+      ),
+      minWidth: 50,
+      align: "center",
+    },
+    { id: "fineAmount", label: "දඩ/හිඟ මුදල් ගෙවීම් ", minWidth: 50, align: "center" },
   ]
   const finesColumnsArray = [
-    { id: "date", label: "දිනය", minWidth: 50 },
-    { id: "fineType", label: "කාරණය", minWidth: 50 },
-    { id: "fineAmount", label: "දඩ මුදල ", minWidth: 50 },
+    { id: "date", label: "දිනය", minWidth: 50, align: "center" },
+    { id: "fineType", label: "කාරණය", minWidth: 50, align: "center" },
+    { id: "fineAmount", label: "දඩ මුදල ", minWidth: 50, align: "center" },
   ]
 
   const loanColumns = [
@@ -187,7 +228,16 @@ export default function FullDetails() {
               variant="outlined"
               type="number"
               value={memberId}
-              onChange={e => setMemberId(e.target.value)}
+              onChange={e => {
+                const v = e.target.value
+                setMemberId(v)
+                // reset hasSearched when input cleared so message doesn't show while typing
+                if (!v) {
+                  setHasSearched(false)
+                  setMember({})
+                  setIsSearching(false)
+                }
+              }}
               fullWidth
             />
           </Grid>
@@ -199,8 +249,21 @@ export default function FullDetails() {
         </Grid>
       </Paper>
       {/* Member Basic Info */}
-      <Paper elevation={2} sx={{ p: { xs: 2, sm: 3 }, mb: 2, bgcolor: '#f5f7fa' }}>
-        <Grid container spacing={2} alignItems="center">
+      <Paper elevation={2} sx={{ p: { xs: 2, sm: 3 }, mb: 2, bgcolor: memberWarningBg }}>
+          <Grid container spacing={2} alignItems="center">
+          {/* Show not-found when a search was performed but no member data returned */}
+          {!member.memberDetails && hasSearched && !isSearching && (
+            <Grid item xs={12}>
+              <Box sx={{ mb: 1 }}>
+                <Typography color="error" fontWeight={700}>
+                  Member not available for ID: {memberId}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  No member found for the entered number.
+                </Typography>
+              </Box>
+            </Grid>
+          )}
           <Grid item xs={12} sm={3} sx={{ display: 'flex', alignItems: 'center' }}>
             <SummarizeIcon color="primary" sx={{ mr: 1 }} />
             <Typography fontWeight={700}>{member.memberDetails?.name}</Typography>
@@ -208,31 +271,33 @@ export default function FullDetails() {
           <Grid item xs={12} sm={3}>
             <Typography>{member.memberDetails?.area}</Typography>
           </Grid>
-          <Grid item xs={12} sm={3}>
-            {(() => {
-              const deact = getDeactivatedInfo(member)
-              const rawStatus = member.memberDetails?.status
-              const statusLabel = deact.isDeactivated
-                ? "අක්‍රීය"
-                : {
-                    regular: "සාමාන්‍ය",
-                    "funeral-free": "අවමංගල්‍ය වැඩවලින් නිදහස්",
-                    "attendance-free": "පැමිණීමෙන් නිදහස්",
-                    free: "නිදහස්",
-                  }[rawStatus] || rawStatus || "-"
+          {member.memberDetails ? (
+            <Grid item xs={12} sm={3}>
+              {(() => {
+                const deact = getDeactivatedInfo(member)
+                const rawStatus = member.memberDetails?.status
+                const statusLabel = deact.isDeactivated
+                  ? "අක්‍රීය"
+                  : {
+                      regular: "සාමාන්‍ය",
+                      "funeral-free": "අවමංගල්‍ය වැඩවලින් නිදහස්",
+                      "attendance-free": "පැමිණීමෙන් නිදහස්",
+                      free: "නිදහස්",
+                    }[rawStatus] || rawStatus || "-"
 
-              return (
-                <>
-                  <Typography>{statusLabel}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {deact.isDeactivated
-                      ? `Deactivated: ${deact.dateText ?? "(invalid date)"}`
-                      : "Deactivated: Active"}
-                  </Typography>
-                </>
-              )
-            })()}
-          </Grid>
+                return (
+                  <>
+                    <Typography>{statusLabel}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {deact.isDeactivated
+                        ? `Deactivated: ${deact.dateText ?? "(invalid date)"}`
+                        : ""}
+                    </Typography>
+                  </>
+                )
+              })()}
+            </Grid>
+          ) : null}
           <Grid item xs={12} sm={3}>
             <Typography>මාසික සාමාජික මුදල: {member.membershipRate}</Typography>
           </Grid>

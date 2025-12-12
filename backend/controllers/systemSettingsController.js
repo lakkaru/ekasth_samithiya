@@ -161,6 +161,13 @@ exports.initializeDefaultSettings = async (req, res) => {
         settingType: 'fine',
         description: 'සාමූහික වැඩ පැමිණීම් දඩ මුදල',
         updatedBy: userId
+      },
+      {
+        settingName: 'MONTHLY_MEMBERSHIP_RATE',
+        settingValue: 300,
+        settingType: 'financial',
+        description: 'මාසික සාමාජික අයකිරීම',
+        updatedBy: userId
       }
     ];
     
