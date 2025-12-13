@@ -540,15 +540,7 @@ export default function ExtraDue() {
                     ),
                   }}
                 />
-                {amount && (
-                  <Typography
-                    variant="caption"
-                    color="textSecondary"
-                    sx={{ mt: 1, display: "block" }}
-                  >
-                    ප්‍රදර්ශනය: {formatCurrency(amount)}
-                  </Typography>
-                )}
+                {/* Amount preview removed - value shown in the table below */}
               </Grid2>
 
               <Grid2 size={{ xs: 12, sm: 4 }}>
@@ -578,60 +570,7 @@ export default function ExtraDue() {
           </Paper>
         )}
 
-        {/* Confirmation panel for last added extra due */}
-        {lastAddedExtraDue && (
-          <Paper
-            elevation={3}
-            sx={{ p: 3, mb: 3, borderRadius: 2, backgroundColor: "#e8f5e9" }}
-          >
-            <Typography variant="h6" sx={{ fontWeight: 700, color: "#2e7d32" }}>
-              අතිරේක ආධාර හිඟ එකතු කරන ලදි
-            </Typography>
-            <Box sx={{ mt: 1 }}>
-              <Typography>
-                <strong>සා. අංකය:</strong> {lastAddedExtraDue.member_id}
-              </Typography>
-              <Typography>
-                <strong>නම:</strong> {lastAddedExtraDue.name}
-              </Typography>
-              <Typography>
-                <strong>මුදල:</strong>{" "}
-                {formatCurrency(lastAddedExtraDue.amount)}
-              </Typography>
-              {lastAddedExtraDue.funeral && (
-                <Typography>
-                  <strong>අවමංගල්‍යය:</strong>{" "}
-                  {lastAddedExtraDue.funeral.member_id?.name || "-"} ({formatDate(lastAddedExtraDue.funeral.date)})
-                </Typography>
-              )}
-              {lastAddedExtraDue.funeral && (
-                <Typography>
-                  <strong>මියගිය:</strong>{" "}
-                  {getDeceasedName(lastAddedExtraDue.funeral) || "-"}
-                </Typography>
-              )}
-              <Box sx={{ mt: 2 }}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => setLastAddedExtraDue(null)}
-                  sx={{ mr: 2 }}
-                >
-                  හරි
-                </Button>
-                <Button
-                  variant="outlined"
-                  onClick={() => {
-                    setLastAddedExtraDue(null)
-                    resetForm()
-                  }}
-                >
-                  නව සෙවුමක්
-                </Button>
-              </Box>
-            </Box>
-          </Paper>
-        )}
+        {/* Confirmation panel removed: extra due entries are visible in the table below */}
 
         <Divider sx={{ marginY: "30px" }} />
 
