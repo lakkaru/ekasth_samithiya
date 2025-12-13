@@ -687,3 +687,35 @@ exports.getFuneralWorkFineAmounts = async (req, res) => {
     res.status(500).json({ message: "Internal server error." });
   }
 };
+
+// Delete a funeral by deceased_id and cleanup associated fines
+exports.deleteFuneralByDeceasedId = async (req, res) => {
+  try {
+    const { deceased_id } = req.body;
+    if (!deceased_id) {
+      return res.status(400).json({ success: false, message: 'deceased_id is required' });
+    }
+
+    // Find the funeral document
+    const funeral = await Funeral.findOne({ deceased_id });
+    if (!funeral) {
+      return res.status(404).json({ success: false, message: 'Funeral not found for given deceased_id' });
+    }
+
+    const funeralId = funeral._id;
+
+    // Remove fines associated with this funeral from members
+    await Member.updateMany(
+      { 'fines.eventId': funeralId },
+      { $pull: { fines: { eventId: funeralId } } }
+    );
+
+    // Delete the funeral document
+    await Funeral.findByIdAndDelete(funeralId);
+
+    return res.status(200).json({ success: true, message: 'Funeral deleted and related fines removed' });
+  } catch (error) {
+    console.error('Error deleting funeral by deceased_id:', error.message);
+    return res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
+  }
+};

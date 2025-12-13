@@ -97,7 +97,23 @@ export default function DeathById() {
       })
         .then(response => {
           console.log("Death updated.")
-          setFuneral(true)
+          // create a funeral event for this death
+          const payload = {
+            date: selectedDate ? selectedDate.toISOString() : null,
+            member_id: familyRegister[0]._id,
+            deceased_id: "member",
+            cemeteryAssignments: [],
+            funeralAssignments: [],
+            removedMembers: [],
+          }
+          api
+            .post(`${baseUrl}/funeral/createFuneral`, payload)
+            .then(() => {
+              setFuneral(true)
+            })
+            .catch(err => {
+              console.error('Error creating funeral:', err)
+            })
         })
         .catch(error => {
           console.error("Death update error:", error)
@@ -110,7 +126,23 @@ export default function DeathById() {
       })
         .then(response => {
           console.log("Dependent death updated.")
-          setFuneral(true)
+          // create funeral for dependent death (member_id is main member)
+          const payload = {
+            date: selectedDate ? selectedDate.toISOString() : null,
+            member_id: familyRegister[0]._id,
+            deceased_id: familyRegister[selectedDeath]._id,
+            cemeteryAssignments: [],
+            funeralAssignments: [],
+            removedMembers: [],
+          }
+          api
+            .post(`${baseUrl}/funeral/createFuneral`, payload)
+            .then(() => {
+              setFuneral(true)
+            })
+            .catch(err => {
+              console.error('Error creating funeral for dependent:', err)
+            })
         })
         .catch(error => {
           console.error("Dependent death update error:", error)
@@ -133,7 +165,11 @@ export default function DeathById() {
           setSelectedDeath(null)
           setSelectedDate(dayjs())
           setFuneral(false)
-          getMemberById()
+          // delete associated funeral (if any)
+          api
+            .post(`${baseUrl}/funeral/deleteFuneralByDeceasedId`, { deceased_id: familyRegister[0]._id })
+            .catch(err => console.warn('No funeral to delete or delete failed:', err))
+            .finally(() => getMemberById())
         })
         .catch(err => {
           console.error("Error clearing member death:", err)
@@ -149,7 +185,11 @@ export default function DeathById() {
           setSelectedDeath(null)
           setSelectedDate(dayjs())
           setFuneral(false)
-          getMemberById()
+            // delete associated funeral for dependent (if any)
+            api
+              .post(`${baseUrl}/funeral/deleteFuneralByDeceasedId`, { deceased_id: familyRegister[index]._id })
+              .catch(err => console.warn('No funeral to delete or delete failed:', err))
+              .finally(() => getMemberById())
         })
         .catch(err => {
           console.error("Error clearing dependent death:", err)
