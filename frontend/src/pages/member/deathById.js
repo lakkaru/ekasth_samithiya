@@ -69,7 +69,19 @@ export default function DeathById() {
         value={index}
         name="death-selection"
       />
-    ) : familyMember.dateOfDeath.split("T")[0], // Show date if already dead
+    ) : (
+      // Show formatted date and provide a small button to remove/clear the death
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Typography variant="body2">{dayjs(familyMember.dateOfDeath).format("DD/MMM/YYYY")}</Typography>
+        <Button
+          size="small"
+          variant="outlined"
+          onClick={() => handleRemoveDeath(index)}
+        >
+          ඉවත් කරන්න
+        </Button>
+      </Box>
+    ), // Show date if already dead
   }))
 
   //   console.log("Mapped Data Array:", dataArray) // Debug mapped data array
@@ -105,6 +117,44 @@ export default function DeathById() {
         })
     }
     getMemberById()
+  }
+
+  // Remove/clear death for member or dependent
+  const handleRemoveDeath = index => {
+    if (index === 0) {
+      // Clear member death
+      api
+        .post(`${baseUrl}/member/updateDiedStatus`, {
+          _id: familyRegister[0]._id,
+          dateOfDeath: null,
+        })
+        .then(() => {
+          // refresh
+          setSelectedDeath(null)
+          setSelectedDate(dayjs())
+          setFuneral(false)
+          getMemberById()
+        })
+        .catch(err => {
+          console.error("Error clearing member death:", err)
+        })
+    } else {
+      // Clear dependent death
+      api
+        .post(`${baseUrl}/member/updateDependentDiedStatus`, {
+          _id: familyRegister[index]._id,
+          dateOfDeath: null,
+        })
+        .then(() => {
+          setSelectedDeath(null)
+          setSelectedDate(dayjs())
+          setFuneral(false)
+          getMemberById()
+        })
+        .catch(err => {
+          console.error("Error clearing dependent death:", err)
+        })
+    }
   }
 
   const handleFuneral = () => {
