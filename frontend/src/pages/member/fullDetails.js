@@ -392,39 +392,59 @@ export default function FullDetails() {
       {member.groupedPayments &&
         Object.keys(member.groupedPayments)
           .sort((a, b) => b - a) // Sort years in descending order
-          .map(year => (
-            <Box key={year} sx={{ marginBottom: "30px" }}>
-              <Typography
-                variant="h6"
-                align="center"
-                sx={{ 
-                  marginBottom: "15px",
-                  fontWeight: "bold",
-                  color: "#1976d2",
-                  backgroundColor: "#e3f2fd",
-                  padding: "10px",
-                  borderRadius: "8px"
-                }}
-              >
-                {year} - වසරේ ගෙවීම්
-              </Typography>
-              <Paper 
-                elevation={4} 
-                sx={{ 
-                  padding: "20px",
-                  borderRadius: "12px",
-                  border: "1px solid #e0e0e0"
-                }}
-              >
-                <StickyHeadTable
-                  columnsArray={paymentsColumnsArray}
-                  dataArray={member.groupedPayments[year]?.payments || []} // Ensure `payments` is defined
-                  headingAlignment={"left"}
-                  dataAlignment={"left"}
-                />
-              </Paper>
-            </Box>
-          ))}
+          .map(year => {
+            const monthlyBase = member.groupedPayments[year]?.monthlyBaseRate ?? member.membershipRate ?? 0
+            const monthsForYear = parseInt(year, 10) === new Date().getFullYear() ? monthsElapsed : 12
+            const expectedForYear = member.groupedPayments[year]?.expectedMembershipPayment ?? (monthlyBase * monthsForYear)
+            const columnsForYear = paymentsColumnsArray.map(col => {
+              if (col.id === 'memAmount') {
+                return {
+                  ...col,
+                  label: (
+                    <>
+                      <div>සාමාජික මුදල් ගෙවීම්</div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 400 }}>{`(${formatCurrency(expectedForYear)})`}</div>
+                    </>
+                  )
+                }
+              }
+              return col
+            })
+
+            return (
+              <Box key={year} sx={{ marginBottom: "30px" }}>
+                <Typography
+                  variant="h6"
+                  align="center"
+                  sx={{ 
+                    marginBottom: "15px",
+                    fontWeight: "bold",
+                    color: "#1976d2",
+                    backgroundColor: "#e3f2fd",
+                    padding: "10px",
+                    borderRadius: "8px"
+                  }}
+                >
+                  {year} - වසරේ ගෙවීම්
+                </Typography>
+                <Paper 
+                  elevation={4} 
+                  sx={{ 
+                    padding: "20px",
+                    borderRadius: "12px",
+                    border: "1px solid #e0e0e0"
+                  }}
+                >
+                  <StickyHeadTable
+                    columnsArray={columnsForYear}
+                    dataArray={member.groupedPayments[year]?.payments || []} // Ensure `payments` is defined
+                    headingAlignment={"left"}
+                    dataAlignment={"left"}
+                  />
+                </Paper>
+              </Box>
+            )
+          })}
       <hr />
       {member.loanInfo?.loan && (
         <>
