@@ -45,6 +45,22 @@ export default function ExtraDue() {
   const [member, setMember] = useState({})
   const [dueMemberId, setDueMemberId] = useState("")
   const [deceasedOptions, setDeceasedOptions] = useState([])
+  const [availableFunerals, setAvailableFunerals] = useState([])
+
+  // Fetch available funerals on mount so the treasurer can pick without searching
+  useEffect(() => {
+    let mounted = true
+    api.get(`${baseUrl}/funeral/getAvailableFunerals`)
+      .then(res => {
+        if (!mounted) return
+        const funerals = res?.data?.funerals || []
+        setAvailableFunerals(funerals)
+      })
+      .catch(err => {
+        console.warn('Could not fetch available funerals on mount:', err)
+      })
+    return () => { mounted = false }
+  }, [])
   const [selectedDeceased, setSelectedDeceased] = useState("")
   const [amount, setAmount] = useState("")
   const [updateTrigger, setUpdateTrigger] = useState(false)
@@ -113,6 +129,7 @@ export default function ExtraDue() {
         }
       })
       setDeceasedOptions(deceased)
+      setAvailableFunerals(prev => prev)
       
       if (deceased.length === 0) {
         setError("මෙම සාමාජිකයා සඳහා මරණ සටහන් නොමැත")
@@ -278,7 +295,7 @@ export default function ExtraDue() {
             }}
           >
             <PersonIcon sx={{ marginRight: "8px" }} />
-            සාමාජික සොයන්න
+            අවමංගල්‍ය සොයන්න
           </Typography>
           
           <Grid2 
@@ -322,13 +339,14 @@ export default function ExtraDue() {
               </Button>
             </Grid2>
             <Grid2 size={{ xs: 12, sm: 5 }}>
+              {/* Deceased options from searched member (if any) */}
               {member._id && (
                 <Select
                   fullWidth
                   value={selectedDeceased}
                   onChange={handleSelectChange}
                   displayEmpty
-                  sx={{ height: "56px" }}
+                  sx={{ height: "56px", mb: 1 }}
                 >
                   <MenuItem value="" disabled>
                     මියගිය පුද්ගලයා තෝරන්න
@@ -338,15 +356,40 @@ export default function ExtraDue() {
                       <Box sx={{ display: "flex", alignItems: "center" }}>
                         <FuneralIcon sx={{ marginRight: "8px", color: "text.secondary" }} />
                         {option.name}
-                        {/* <Chip 
-                          label={option.isMember ? "සාමාජික" : "පැවත්වෙන්"} 
-                          size="small" 
-                          variant="outlined"
-                          sx={{ marginLeft: "8px" }}
-                        /> */}
                       </Box>
                     </MenuItem>
                   ))}
+                </Select>
+              )}
+
+              {/* Always show available funerals selector (newest first) so treasurer can pick without searching a member */}
+              {availableFunerals && availableFunerals.length > 0 && (
+                <Select
+                  fullWidth
+                  value={selectedDeceased}
+                  onChange={e => setSelectedDeceased(e.target.value)}
+                  displayEmpty
+                  sx={{ height: "56px" }}
+                >
+                  <MenuItem value="" disabled>
+                    ලබා ගත හැකි අවමංගල්‍ය තෝරන්න
+                  </MenuItem>
+                  {availableFunerals.map(fun => {
+                    const deceasedId = fun.deceased_id && fun.deceased_id._id ? fun.deceased_id._id : (fun.deceased_id || '')
+                    const displayName = fun.member_id?.name || 'Unknown'
+                    const dateStr = fun.date ? new Date(fun.date).toLocaleDateString() : ''
+                    return (
+                      <MenuItem key={fun._id} value={deceasedId}>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <FuneralIcon sx={{ marginRight: '8px', color: 'text.secondary' }} />
+                          <Box>
+                            <div>{displayName}</div>
+                            <div style={{ fontSize: '.8rem', color: '#666' }}>{dateStr}</div>
+                          </Box>
+                        </Box>
+                      </MenuItem>
+                    )
+                  })}
                 </Select>
               )}
             </Grid2>
