@@ -25,6 +25,7 @@ export default function DeathById() {
   const [selectedDeath, setSelectedDeath] = useState(null) 
   const [selectedDate, setSelectedDate] = useState(dayjs()) 
   const [funeral, setFuneral] = useState(false) 
+  const [disableAdd, setDisableAdd] = useState(false)
 
   const handleAuthStateChange = ({ isAuthenticated, roles }) => {
     setIsAuthenticated(isAuthenticated)
@@ -65,7 +66,10 @@ export default function DeathById() {
       <Radio
         checked={selectedDeath === index}
         // Toggle selection: clicking an already-selected radio will unselect
-        onClick={() => setSelectedDeath(prev => (prev === index ? null : index))}
+        onClick={() => {
+          setSelectedDeath(prev => (prev === index ? null : index))
+          setDisableAdd(false)
+        }}
         value={index}
         name="death-selection"
       />
@@ -97,6 +101,8 @@ export default function DeathById() {
       })
         .then(response => {
           console.log("Death updated.")
+          // disable add UI until user selects another person
+          setDisableAdd(true)
           // create a funeral event for this death
           const payload = {
             date: selectedDate ? selectedDate.toISOString() : null,
@@ -126,6 +132,8 @@ export default function DeathById() {
       })
         .then(response => {
           console.log("Dependent death updated.")
+          // disable add UI until user selects another person
+          setDisableAdd(true)
           // create funeral for dependent death (member_id is main member)
           const payload = {
             date: selectedDate ? selectedDate.toISOString() : null,
@@ -165,6 +173,7 @@ export default function DeathById() {
           setSelectedDeath(null)
           setSelectedDate(dayjs())
           setFuneral(false)
+          setDisableAdd(false)
           // delete associated funeral (if any)
           api
             .post(`${baseUrl}/funeral/deleteFuneralByDeceasedId`, { deceased_id: familyRegister[0]._id })
@@ -185,6 +194,7 @@ export default function DeathById() {
           setSelectedDeath(null)
           setSelectedDate(dayjs())
           setFuneral(false)
+          setDisableAdd(false)
             // delete associated funeral for dependent (if any)
             api
               .post(`${baseUrl}/funeral/deleteFuneralByDeceasedId`, { deceased_id: familyRegister[index]._id })
@@ -248,7 +258,7 @@ export default function DeathById() {
           <Button variant="contained" onClick={getMemberById}>
             Search
           </Button>
-          {familyRegister[selectedDeath] && (
+          {familyRegister[selectedDeath] && !disableAdd && (
             <>
               <Typography
                 sx={{ textAlign: "right" }}
