@@ -161,6 +161,13 @@ exports.initializeDefaultSettings = async (req, res) => {
         settingType: 'fine',
         description: 'සාමූහික වැඩ පැමිණීම් දඩ මුදල',
         updatedBy: userId
+      },
+      {
+        settingName: 'MONTHLY_MEMBERSHIP_RATE',
+        settingValue: 300,
+        settingType: 'financial',
+        description: 'මාසික සාමාජික අයකිරීම',
+        updatedBy: userId
       }
     ];
     
@@ -281,18 +288,32 @@ exports.upsertSetting = async (req, res) => {
     const userId = await getAdminUserObjectId(userMemberId);
 
     const existing = await SystemSettings.findOne({ settingName });
+    // If the setting is a membership rate (generic or year-specific) we set
+    // `effectiveFrom` to the first day of the next month so changes take
+    // effect from the following month.
+    let effectiveFrom = undefined;
+    try {
+      if (typeof settingName === 'string' && settingName.startsWith('MONTHLY_MEMBERSHIP_RATE')) {
+        const now = new Date();
+        effectiveFrom = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      }
+    } catch (e) {
+      console.error('Error computing effectiveFrom for upsert:', e);
+    }
+
     if (existing) {
-      const updated = await SystemSettings.updateSetting(settingName, settingValue, userId, 'Upsert from admin UI');
+      const updated = await SystemSettings.updateSetting(settingName, settingValue, userId, 'Upsert from admin UI', effectiveFrom);
       return res.status(200).json({ success: true, message: 'Setting updated', setting: updated });
     }
 
-    // Create new setting
+    // Create new setting (with effectiveFrom for membership rate keys)
     const newSetting = new SystemSettings({
       settingName,
       settingValue,
       settingType,
       description,
-      updatedBy: userId
+      updatedBy: userId,
+      ...(effectiveFrom ? { effectiveFrom } : {})
     });
     await newSetting.save();
     return res.status(201).json({ success: true, message: 'Setting created', setting: newSetting });

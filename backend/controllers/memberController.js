@@ -15,18 +15,17 @@ const FinePayment = require("../models/FinePayment");
 const Funeral = require("../models/Funeral");
 const Meeting = require("../models/Meeting");
 const CommonWork = require("../models/CommonWork");
+const SystemSettings = require("../models/SystemSettings");
 
 // Environment variable for JWT secret
 const JWT_SECRET = process.env.JWT_SECRET;
-
-const monthlyMembership2025 = 300;
 
 //getting all info about member and dependents
 async function getMembershipDetails(member_id) {
   const member = await Member.findOne({ member_id: member_id })
     .populate("dependents", "name relationship dateOfDeath") // Populate dependents with necessary fields
     .select(
-      "_id member_id name dateOfDeath dependents area  status siblingsCount previousDue"
+      "_id member_id name dateOfDeath dependents area status siblingsCount previousDue deactivated_at"
     );
 
   if (!member) {
@@ -41,6 +40,23 @@ async function membershipRateForMember(siblingsCount, monthlyRate) {
     return monthlyRate + monthlyRate * 0.3 * siblingsCount;
   } else {
     return monthlyRate;
+  }
+}
+
+// Get monthly membership rate for a specific year. Prefer year-specific setting
+// e.g. MONTHLY_MEMBERSHIP_RATE_2025. Fallback to generic MONTHLY_MEMBERSHIP_RATE
+// and then to 300 if nothing is set.
+async function getMonthlyRateForYear(year) {
+  try {
+    const yearKey = `MONTHLY_MEMBERSHIP_RATE_${year}`;
+    let value = await SystemSettings.getSettingValue(yearKey, null);
+    if (value === null || value === undefined) {
+      value = await SystemSettings.getSettingValue('MONTHLY_MEMBERSHIP_RATE', 300);
+    }
+    return Number(value) || 500;
+  } catch (err) {
+    console.error('Error reading monthly rate for year', year, err);
+    return 400;
   }
 }
 
@@ -861,11 +877,12 @@ exports.getMember = async (req, res) => {
     );
     //calculating membership due for this year
     const currentMonth = new Date().getMonth();
+    const monthlyBaseRate = await getMonthlyRateForYear(currentYear);
     if (member.siblingsCount > 0) {
       membershipCharge =
-        (300 * member.siblingsCount * 0.3 + 300) * currentMonth;
+        (monthlyBaseRate * member.siblingsCount * 0.3 + monthlyBaseRate) * currentMonth;
     } else {
-      membershipCharge = 300 * currentMonth;
+      membershipCharge = monthlyBaseRate * currentMonth;
     }
     const membershipDue = membershipCharge - totalMembershipPayments;
     // Respond with member details
@@ -1293,11 +1310,12 @@ exports.getMemberDueById = async (req, res) => {
 
     //calculating membership due for this year
     const currentMonth = new Date().getMonth();
+    const monthlyBaseRate = await getMonthlyRateForYear(currentYear);
     if (member.siblingsCount > 0) {
       membershipCharge =
-        (300 * member.siblingsCount * 0.3 + 300) * currentMonth;
+        (monthlyBaseRate * member.siblingsCount * 0.3 + monthlyBaseRate) * currentMonth;
     } else {
-      membershipCharge = 300 * currentMonth;
+      membershipCharge = monthlyBaseRate * currentMonth;
     }
     const membershipDue = membershipCharge - totalMembershipPayments;
 
@@ -1587,20 +1605,42 @@ exports.getMemberAllInfoById = async (req, res) => {
   try {
     const { member_id, exclude_loan_installment } = req.query;
     const member = await getMembershipDetails(member_id);
+    if (!member) {
+      return res.status(404).json({ message: "Member not found", memberData: null });
+    }
     const member_Id = member._id;
+    // Get monthly membership rate for current year
+    const currentYear = new Date().getFullYear();
+    const monthlyRate = await getMonthlyRateForYear(currentYear);
     const membershipRate = await membershipRateForMember(
       member.siblingsCount,
-      monthlyMembership2025
+      monthlyRate
     );
 
     const totalMembershipPayment = await getTotalMembershipPayment(
-      "2025",
+      String(currentYear),
       member_Id
     );
     const currentMembershipDue =
       new Date().getMonth() * membershipRate - totalMembershipPayment;
     // const membershipDue=membershipRateForMember
     const groupedPayments = await getAllPaymentsByMember(member_Id);
+    // Augment groupedPayments with year-aware membership rate and expected membership payment
+    try {
+      const paymentYears = Object.keys(groupedPayments || {});
+      const nowYear = new Date().getFullYear();
+      for (const y of paymentYears) {
+        const yi = parseInt(y, 10);
+        const monthlyBase = await getMonthlyRateForYear(yi);
+        const monthsElapsed = yi === nowYear ? new Date().getMonth() : 12;
+        const expected = monthlyBase * monthsElapsed;
+        if (!groupedPayments[y]) groupedPayments[y] = { payments: [], totals: { memAmount: 0, fineAmount: 0 } };
+        groupedPayments[y].monthlyBaseRate = monthlyBase;
+        groupedPayments[y].expectedMembershipPayment = expected;
+      }
+    } catch (err) {
+      console.error('Error augmenting groupedPayments with membership rates:', err);
+    }
     const finesTotalPayments = groupedPayments["2025"]?.totals.fineAmount || 0;
     const fines = await getAllFinesOfMember(member_Id);
     const finesTotal = fines["2025"]?.total.fineAmount || 0;
@@ -1636,6 +1676,21 @@ exports.getMemberAllInfoById = async (req, res) => {
         currentMembershipDue;
     }
 
+    // Determine if there's a year-specific rate for next year (so UI can show upcoming changes).
+    // We read the raw setting document here so the UI can display the upcoming value
+    // even if its `effectiveFrom` is in the future.
+    let upcomingMembershipRate = null;
+    try {
+      const nextYear = currentYear + 1;
+      const nextKey = `MONTHLY_MEMBERSHIP_RATE_${nextYear}`;
+      const nextDoc = await SystemSettings.findOne({ settingName: nextKey });
+      if (nextDoc) {
+        upcomingMembershipRate = Number(nextDoc.settingValue) || null;
+      }
+    } catch (err) {
+      console.error('Error fetching upcoming membership rate:', err);
+    }
+
     return res.status(200).json({
       message: "Member information retrieved successfully",
       memberData: {
@@ -1646,6 +1701,8 @@ exports.getMemberAllInfoById = async (req, res) => {
         groupedPayments,
         loanInfo,
         totalDue,
+        upcomingMembershipYear: currentYear + 1,
+        upcomingMembershipRate,
       },
     });
   } catch (error) {
@@ -1845,11 +1902,14 @@ exports.getDueForMeetingSign = async (req, res) => {
       finePaymentMap.set(payment._id.toString(), payment.totalPaid);
     });
 
+    // Determine base monthly rate for the current year
+    const monthlyBaseRate = await getMonthlyRateForYear(currentYear);
+
     // Calculate total membership dues for each member
     const memberDues = members.map((member) => {
       const memberShipTotalPaid =
         membershipPaymentMap.get(member._id.toString()) || 0;
-      const membershipDue = currentMonth * 300 - memberShipTotalPaid;
+      const membershipDue = currentMonth * monthlyBaseRate - memberShipTotalPaid;
       const totalFines = member.fines?.reduce(
         (sum, fine) => sum + fine.amount,
         0
@@ -2832,8 +2892,9 @@ exports.getMembersForCommonWorkDocument = async (req, res) => {
 // Get all active members with their due/remaining amounts
 exports.getAllMembersDue = async (req, res) => {
     try {
-        const currentYear = new Date().getFullYear();
-        const monthsToCharge = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      const monthsToCharge = new Date().getMonth();
+      const monthlyBaseRate = await getMonthlyRateForYear(currentYear);
         const startOfYear = new Date(currentYear, 0, 1);
 
         // Fetch all active members (not deactivated)
@@ -2845,9 +2906,9 @@ exports.getAllMembersDue = async (req, res) => {
         const membersWithDue = await Promise.all(
             activeMembers.map(async (member) => {
                 // Calculate membership charge
-                let membershipCharge = 300 * monthsToCharge;
+                let membershipCharge = monthlyBaseRate * monthsToCharge;
                 if (member.siblingsCount > 0) {
-                    membershipCharge = (300 * member.siblingsCount * 0.3 + 300) * monthsToCharge;
+                  membershipCharge = (monthlyBaseRate * member.siblingsCount * 0.3 + monthlyBaseRate) * monthsToCharge;
                 }
 
                 // Get membership payments for current year
