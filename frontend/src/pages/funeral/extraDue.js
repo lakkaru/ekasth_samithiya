@@ -50,33 +50,93 @@ export default function ExtraDue() {
   // Fetch available funerals on mount so the treasurer can pick without searching
   useEffect(() => {
     let mounted = true
-    api.get(`${baseUrl}/funeral/getAvailableFunerals`)
+    api
+      .get(`${baseUrl}/funeral/getAvailableFunerals`)
       .then(res => {
         if (!mounted) return
         const funerals = res?.data?.funerals || []
         setAvailableFunerals(funerals)
       })
       .catch(err => {
-        console.warn('Could not fetch available funerals on mount:', err)
+        console.warn("Could not fetch available funerals on mount:", err)
       })
-    return () => { mounted = false }
+    return () => {
+      mounted = false
+    }
   }, [])
 
   // Helper: derive deceased name from a funeral doc. deceased_id may be the member id
   // or a dependent id. getAvailableFunerals populates `member_id` and its `dependents`.
-  const getDeceasedName = (fun) => {
-    if (!fun) return ''
-    const deceasedId = fun.deceased_id && fun.deceased_id._id ? String(fun.deceased_id._id) : String(fun.deceased_id || '')
-    // if deceased is the member
+  const getDeceasedName = fun => {
+    if (!fun) return ""
+    const deceasedId =
+      fun.deceased_id && fun.deceased_id._id
+        ? String(fun.deceased_id._id)
+        : String(fun.deceased_id || "")
     if (fun.member_id && String(fun.member_id._id) === deceasedId) {
-      return fun.member_id.name || ''
+      return fun.member_id.name || ""
     }
-    // try dependents
-    const dep = (fun.member_id && fun.member_id.dependents || []).find(d => String(d._id) === deceasedId)
-    if (dep) return dep.name || ''
-    // if deceased_id was populated as an object with name
-    if (fun.deceased_id && typeof fun.deceased_id === 'object' && fun.deceased_id.name) return fun.deceased_id.name
-    return ''
+    const dep = ((fun.member_id && fun.member_id.dependents) || []).find(
+      d => String(d._id) === deceasedId
+    )
+    if (dep) return dep.name || ""
+    if (
+      fun.deceased_id &&
+      typeof fun.deceased_id === "object" &&
+      fun.deceased_id.name
+    )
+      return fun.deceased_id.name
+    return ""
+  }
+
+  // Return relationship string for the deceased (e.g. dependent.relationship or 'සාමාජිකයා' when the member is deceased)
+  const getDeceasedRelationship = fun => {
+    if (!fun) return ""
+    const deceasedId =
+      fun.deceased_id && fun.deceased_id._id
+        ? String(fun.deceased_id._id)
+        : String(fun.deceased_id || "")
+    // If deceased is the member themself
+    if (fun.member_id && String(fun.member_id._id) === deceasedId) {
+      return "සාමාජිකයා"
+    }
+    // find dependent
+    const dep = ((fun.member_id && fun.member_id.dependents) || []).find(
+      d => String(d._id) === deceasedId
+    )
+    if (dep && dep.relationship) return dep.relationship
+    // if funeral.deceased_id is populated as an object with relationship
+    if (
+      fun.deceased_id &&
+      typeof fun.deceased_id === "object" &&
+      fun.deceased_id.relationship
+    )
+      return fun.deceased_id.relationship
+    return ""
+  }
+  // Format a date as DD/Mon/YYYY (e.g. 12/Jan/2025). Returns empty string for falsy values
+  const formatDate = d => {
+    if (!d) return ""
+    const date = new Date(d)
+    if (isNaN(date)) return ""
+    const dd = String(date.getDate()).padStart(2, "0")
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ]
+    const mon = monthNames[date.getMonth()] || ""
+    const yyyy = date.getFullYear()
+    return `${dd}/${mon}/${yyyy}`
   }
   const [selectedDeceased, setSelectedDeceased] = useState("")
   const [amount, setAmount] = useState("")
@@ -101,15 +161,22 @@ export default function ExtraDue() {
   const handleAuthStateChange = ({ isAuthenticated, roles }) => {
     setIsAuthenticated(isAuthenticated)
     setRoles(roles)
-    if (!isAuthenticated || !(roles.includes("vice-secretary") || roles.includes("treasurer") || roles.includes("auditor"))) {
+    if (
+      !isAuthenticated ||
+      !(
+        roles.includes("vice-secretary") ||
+        roles.includes("treasurer") ||
+        roles.includes("auditor")
+      )
+    ) {
       navigate("/login/user-login")
     }
   }
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('si-LK', {
-      style: 'currency',
-      currency: 'LKR'
+  const formatCurrency = amount => {
+    return new Intl.NumberFormat("si-LK", {
+      style: "currency",
+      currency: "LKR",
     }).format(Math.abs(amount) || 0)
   }
 
@@ -158,27 +225,39 @@ export default function ExtraDue() {
 
     try {
       // derive deceased_id from selected funeral
-      const selectedFun = (availableFunerals || []).find(f => String(f._id) === String(selectedFuneralId))
-      const deceasedIdToSend = selectedFun ? (selectedFun.deceased_id && selectedFun.deceased_id._id ? selectedFun.deceased_id._id : (selectedFun.deceased_id || '')) : selectedDeceased
+      const selectedFun = (availableFunerals || []).find(
+        f => String(f._id) === String(selectedFuneralId)
+      )
+      const deceasedIdToSend = selectedFun
+        ? selectedFun.deceased_id && selectedFun.deceased_id._id
+          ? selectedFun.deceased_id._id
+          : selectedFun.deceased_id || ""
+        : selectedDeceased
       let dueData = {
         dueMemberId,
         amount,
         deceased_id: deceasedIdToSend,
       }
 
-      const res = await api.post(`${baseUrl}/funeral/updateMemberExtraDueFines`, dueData)
+      const res = await api.post(
+        `${baseUrl}/funeral/updateMemberExtraDueFines`,
+        dueData
+      )
       const updatedDue = res?.data?.updatedDue || null
 
       // Find funeral object for the selected deceased (if available)
-      const matchingFuneral = (availableFunerals || []).find(fun => String(fun._id) === String(selectedFuneralId)) || null
+      const matchingFuneral =
+        (availableFunerals || []).find(
+          fun => String(fun._id) === String(selectedFuneralId)
+        ) || null
 
       // Save last added extra due for confirmation display
       setLastAddedExtraDue({
         member_id: updatedDue?.member_id || dueMemberId,
-        name: updatedDue?.name || '',
+        name: updatedDue?.name || "",
         amount: Number(amount),
         funeral: matchingFuneral,
-        fines: updatedDue?.fines || []
+        fines: updatedDue?.fines || [],
       })
 
       // Clear form after successful submission
@@ -196,12 +275,19 @@ export default function ExtraDue() {
   useEffect(() => {
     // When a funeral is selected, derive its deceased_id and load extraDue members
     if (!selectedFuneralId) return
-    const fun = (availableFunerals || []).find(f => String(f._id) === String(selectedFuneralId))
+    const fun = (availableFunerals || []).find(
+      f => String(f._id) === String(selectedFuneralId)
+    )
     if (!fun) return
-    const deceasedId = fun.deceased_id && fun.deceased_id._id ? fun.deceased_id._id : (fun.deceased_id || '')
+    const deceasedId =
+      fun.deceased_id && fun.deceased_id._id
+        ? fun.deceased_id._id
+        : fun.deceased_id || ""
     setSelectedDeceased(deceasedId)
     api
-      .get(`${baseUrl}/funeral/getFuneralExDueMembersByDeceasedId?deceased_id=${deceasedId}`)
+      .get(
+        `${baseUrl}/funeral/getFuneralExDueMembersByDeceasedId?deceased_id=${deceasedId}`
+      )
       .then(res => {
         const addedDues = res.data.extraDueMembersPaidInfo || []
         setDataArray(
@@ -214,7 +300,11 @@ export default function ExtraDue() {
                 size="small"
                 startIcon={<DeleteIcon />}
                 onClick={() => handleDelete(addedDue.id, addedDue.memberId)}
-                sx={{ textTransform: "none", borderRadius: "6px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}
+                sx={{
+                  textTransform: "none",
+                  borderRadius: "6px",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                }}
               >
                 ඉවත් කරන්න
               </Button>
@@ -222,7 +312,9 @@ export default function ExtraDue() {
           }))
         )
       })
-      .catch(err => console.error('Error loading extraDue members for funeral:', err))
+      .catch(err =>
+        console.error("Error loading extraDue members for funeral:", err)
+      )
   }, [selectedFuneralId, updateTrigger, availableFunerals])
   return (
     <Layout>
@@ -233,13 +325,13 @@ export default function ExtraDue() {
           <Typography
             variant="h4"
             gutterBottom
-            sx={{ 
-              fontWeight: "bold", 
+            sx={{
+              fontWeight: "bold",
               color: "#2c3e50",
               marginBottom: "10px",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center"
+              justifyContent: "center",
             }}
           >
             <FuneralIcon sx={{ marginRight: "10px", fontSize: "2rem" }} />
@@ -252,8 +344,8 @@ export default function ExtraDue() {
 
         {/* Error Display */}
         {error && (
-          <Alert 
-            severity="error" 
+          <Alert
+            severity="error"
             sx={{ marginBottom: "20px" }}
             onClose={() => setError("")}
           >
@@ -262,34 +354,30 @@ export default function ExtraDue() {
         )}
 
         {/* Member Search Section */}
-        <Paper 
-          elevation={4} 
-          sx={{ 
-            padding: "30px", 
-            marginBottom: "30px", 
+        <Paper
+          elevation={4}
+          sx={{
+            padding: "30px",
+            marginBottom: "30px",
             borderRadius: "12px",
-            border: "1px solid #e0e0e0"
+            border: "1px solid #e0e0e0",
           }}
         >
-          <Typography 
-            variant="h6" 
-            sx={{ 
-              marginBottom: "20px", 
-              fontWeight: "bold", 
+          <Typography
+            variant="h6"
+            sx={{
+              marginBottom: "20px",
+              fontWeight: "bold",
               color: "#2c3e50",
               display: "flex",
-              alignItems: "center"
+              alignItems: "center",
             }}
           >
             <PersonIcon sx={{ marginRight: "8px" }} />
             අවමංගල්‍ය සොයන්න
           </Typography>
-          
-          <Grid2 
-            container 
-            spacing={3} 
-            alignItems="flex-start"
-          >
+
+          <Grid2 container spacing={3} alignItems="flex-start">
             <Grid2 size={{ xs: 12, sm: 6 }}>
               {/* Deceased options from searched member (if any) */}
               {member._id && (
@@ -306,7 +394,9 @@ export default function ExtraDue() {
                   {deceasedOptions.map(option => (
                     <MenuItem key={option.id} value={option.id}>
                       <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <FuneralIcon sx={{ marginRight: "8px", color: "text.secondary" }} />
+                        <FuneralIcon
+                          sx={{ marginRight: "8px", color: "text.secondary" }}
+                        />
                         {option.name}
                       </Box>
                     </MenuItem>
@@ -327,16 +417,18 @@ export default function ExtraDue() {
                     ලබා ගත හැකි අවමංගල්‍ය තෝරන්න
                   </MenuItem>
                   {availableFunerals.map(fun => {
-                    const dateStr = fun.date ? new Date(fun.date).toLocaleDateString() : ''
-                    const displayName = fun.member_id?.name || 'Unknown'
-                    const memberId = fun.member_id?.member_id || ''
+                    const dateStr = fun.date ? formatDate(fun.date) : ""
+                    const displayName = fun.member_id?.name || "Unknown"
+                    const memberId = fun.member_id?.member_id || ""
                     return (
                       <MenuItem key={fun._id} value={fun._id}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <FuneralIcon sx={{ marginRight: '8px', color: 'text.secondary' }} />
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <FuneralIcon sx={{ marginRight: "8px", color: "text.secondary" }} />
                           <Box>
                             <div style={{ fontWeight: 700 }}>{memberId} - {displayName}</div>
-                            <div style={{ fontSize: '.8rem', color: '#666' }}>{dateStr}</div>
+                            {dateStr && (
+                              <div style={{ fontSize: ".8rem", color: "#666" }}>{dateStr}</div>
+                            )}
                           </Box>
                         </Box>
                       </MenuItem>
@@ -345,24 +437,44 @@ export default function ExtraDue() {
                 </Select>
               )}
             </Grid2>
-            
+
             {/* Deceased person details next to select box for horizontal layout */}
             <Grid2 size={{ xs: 12, sm: 6 }}>
-              {selectedFuneralId && (() => {
-                const fun = (availableFunerals || []).find(f => String(f._id) === String(selectedFuneralId))
-                if (!fun) return null
-                const deceasedName = getDeceasedName(fun)
-                return (
-                  <Card sx={{ backgroundColor: '#fffde7', height: '100%' }}>
-                    <CardContent>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>මියගිය පුද්ගලයා විස්තර</Typography>
-                      <Typography><strong>නම:</strong> {deceasedName}</Typography>
-                      {fun.member_id?.area && <Typography><strong>ප්‍රදේශය:</strong> {fun.member_id.area}</Typography>}
-                      {fun.date && <Typography><strong>දිනය:</strong> {new Date(fun.date).toLocaleDateString()}</Typography>}
-                    </CardContent>
-                  </Card>
-                )
-              })()}
+              {selectedFuneralId &&
+                (() => {
+                  const fun = (availableFunerals || []).find(
+                    f => String(f._id) === String(selectedFuneralId)
+                  )
+                  if (!fun) return null
+                  const deceasedName = getDeceasedName(fun)
+                  const relationship = getDeceasedRelationship(fun)
+                  const areaText = fun.member_id?.area || ""
+                  const dateText = fun.date ? formatDate(fun.date) : ""
+                  const secondLineParts = []
+                  if (areaText) secondLineParts.push(areaText)
+                  if (dateText) secondLineParts.push(dateText)
+                  // const secondLine = secondLineParts.join(' · ')
+                  return (
+                    <Card sx={{ backgroundColor: "#fffde7", height: "100%" }}>
+                      <CardContent
+                        sx={{ py: 1.5, px: 2, "&:last-child": { pb: 1.5 } }}
+                      >
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ fontWeight: 700, mb: 0.5 }}
+                        >
+                          මියගිය පුද්ගලයා :- {deceasedName}
+                          {relationship ? ` — (${relationship})` : ""}
+                        </Typography>
+                        {/* {secondLine && (
+                          <Typography variant="body2" sx={{ color: '#666', mt: 0.25 }}>
+                            {secondLine}
+                          </Typography>
+                        )} */}
+                      </CardContent>
+                    </Card>
+                  )
+                })()}
             </Grid2>
           </Grid2>
 
@@ -370,31 +482,31 @@ export default function ExtraDue() {
         </Paper>
         {/* Add Extra Due Section - Hidden for auditors since they should only view data */}
         {selectedFuneralId && !roles.includes("auditor") && (
-          <Paper 
-            elevation={4} 
-            sx={{ 
-              padding: "30px", 
-              marginBottom: "30px", 
+          <Paper
+            elevation={4}
+            sx={{
+              padding: "30px",
+              marginBottom: "30px",
               borderRadius: "12px",
               border: "1px solid #e0e0e0",
-              backgroundColor: "#fafafa"
+              backgroundColor: "#fafafa",
             }}
           >
-            <Typography 
-              variant="h6" 
-              sx={{ 
-                marginBottom: "20px", 
-                fontWeight: "bold", 
+            <Typography
+              variant="h6"
+              sx={{
+                marginBottom: "20px",
+                fontWeight: "bold",
                 color: "#2c3e50",
                 display: "flex",
-                alignItems: "center"
+                alignItems: "center",
               }}
             >
               <AddIcon sx={{ marginRight: "8px" }} />
               අතිරේක ආධාර හිඟ මුදල් ඇතුලත් කරන්න
             </Typography>
-            
-              <Grid2 container spacing={3} alignItems="center">
+
+            <Grid2 container spacing={3} alignItems="center">
               <Grid2 size={{ xs: 12, sm: 4 }}>
                 <TextField
                   fullWidth
@@ -406,13 +518,13 @@ export default function ExtraDue() {
                   onChange={e => setDueMemberId(e.target.value)}
                   placeholder="සා. අංකය"
                   InputProps={{
-                    startAdornment: <PersonIcon sx={{ mr: 1, color: "text.secondary" }} />
+                    startAdornment: (
+                      <PersonIcon sx={{ mr: 1, color: "text.secondary" }} />
+                    ),
                   }}
                 />
               </Grid2>
 
-              
-              
               <Grid2 size={{ xs: 12, sm: 4 }}>
                 <TextField
                   fullWidth
@@ -423,27 +535,40 @@ export default function ExtraDue() {
                   onChange={e => setAmount(e.target.value)}
                   placeholder="මුදල ඇතුලත් කරන්න"
                   InputProps={{
-                    startAdornment: <PaymentIcon sx={{ mr: 1, color: "text.secondary" }} />
+                    startAdornment: (
+                      <PaymentIcon sx={{ mr: 1, color: "text.secondary" }} />
+                    ),
                   }}
                 />
                 {amount && (
-                  <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: "block" }}>
+                  <Typography
+                    variant="caption"
+                    color="textSecondary"
+                    sx={{ mt: 1, display: "block" }}
+                  >
                     ප්‍රදර්ශනය: {formatCurrency(amount)}
                   </Typography>
                 )}
               </Grid2>
-              
+
               <Grid2 size={{ xs: 12, sm: 4 }}>
                 <Button
                   variant="contained"
                   onClick={handleNext}
                   disabled={nextDisabled || loading}
-                  startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <AddIcon />}
+                  startIcon={
+                    loading ? (
+                      <CircularProgress size={20} color="inherit" />
+                    ) : (
+                      <AddIcon />
+                    )
+                  }
                   sx={{
                     height: "56px",
                     textTransform: "none",
                     borderRadius: "8px",
-                    background: "linear-gradient(135deg, #4caf50 0%, #45a049 100%)"
+                    background:
+                      "linear-gradient(135deg, #4caf50 0%, #45a049 100%)",
                   }}
                 >
                   {loading ? "ඇතුලත් කරමින්..." : "ඇතුලත් කරන්න"}
@@ -455,25 +580,54 @@ export default function ExtraDue() {
 
         {/* Confirmation panel for last added extra due */}
         {lastAddedExtraDue && (
-          <Paper elevation={3} sx={{ p: 3, mb: 3, borderRadius: 2, backgroundColor: '#e8f5e9' }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#2e7d32' }}>අතිරේක ආධාර හිඟ එකතු කරන ලදි</Typography>
+          <Paper
+            elevation={3}
+            sx={{ p: 3, mb: 3, borderRadius: 2, backgroundColor: "#e8f5e9" }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 700, color: "#2e7d32" }}>
+              අතිරේක ආධාර හිඟ එකතු කරන ලදි
+            </Typography>
             <Box sx={{ mt: 1 }}>
-              <Typography><strong>සා. අංකය:</strong> {lastAddedExtraDue.member_id}</Typography>
-              <Typography><strong>නම:</strong> {lastAddedExtraDue.name}</Typography>
-              <Typography><strong>මුදල:</strong> {formatCurrency(lastAddedExtraDue.amount)}</Typography>
+              <Typography>
+                <strong>සා. අංකය:</strong> {lastAddedExtraDue.member_id}
+              </Typography>
+              <Typography>
+                <strong>නම:</strong> {lastAddedExtraDue.name}
+              </Typography>
+              <Typography>
+                <strong>මුදල:</strong>{" "}
+                {formatCurrency(lastAddedExtraDue.amount)}
+              </Typography>
               {lastAddedExtraDue.funeral && (
                 <Typography>
-                  <strong>අවමංගල්‍යය:</strong> {lastAddedExtraDue.funeral.member_id?.name || '-'} ({new Date(lastAddedExtraDue.funeral.date).toLocaleDateString()})
+                  <strong>අවමංගල්‍යය:</strong>{" "}
+                  {lastAddedExtraDue.funeral.member_id?.name || "-"} ({formatDate(lastAddedExtraDue.funeral.date)})
                 </Typography>
               )}
               {lastAddedExtraDue.funeral && (
                 <Typography>
-                  <strong>මියගිය:</strong> {getDeceasedName(lastAddedExtraDue.funeral) || '-'}
+                  <strong>මියගිය:</strong>{" "}
+                  {getDeceasedName(lastAddedExtraDue.funeral) || "-"}
                 </Typography>
               )}
               <Box sx={{ mt: 2 }}>
-                <Button variant="contained" color="primary" onClick={() => setLastAddedExtraDue(null)} sx={{ mr: 2 }}>හරි</Button>
-                <Button variant="outlined" onClick={() => { setLastAddedExtraDue(null); resetForm(); }}>නව සෙවුමක්</Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => setLastAddedExtraDue(null)}
+                  sx={{ mr: 2 }}
+                >
+                  හරි
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    setLastAddedExtraDue(null)
+                    resetForm()
+                  }}
+                >
+                  නව සෙවුමක්
+                </Button>
               </Box>
             </Box>
           </Paper>
@@ -483,27 +637,29 @@ export default function ExtraDue() {
 
         {/* Extra Due Members Table */}
         {dataArray.length > 0 && (
-          <Paper 
-            elevation={4} 
-            sx={{ 
+          <Paper
+            elevation={4}
+            sx={{
               borderRadius: "12px",
               overflow: "hidden",
-              border: "1px solid #e0e0e0"
+              border: "1px solid #e0e0e0",
             }}
           >
-            <Box sx={{ 
-              background: "linear-gradient(135deg, #ff9800 0%, #f57c00 100%)",
-              color: "white",
-              padding: "20px",
-              textAlign: "center"
-            }}>
+            <Box
+              sx={{
+                background: "linear-gradient(135deg, #ff9800 0%, #f57c00 100%)",
+                color: "white",
+                padding: "20px",
+                textAlign: "center",
+              }}
+            >
               <Typography
                 variant="h6"
-                sx={{ 
+                sx={{
                   fontWeight: "bold",
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center"
+                  justifyContent: "center",
                 }}
               >
                 <PaymentIcon sx={{ marginRight: "8px" }} />
@@ -524,16 +680,18 @@ export default function ExtraDue() {
 
         {/* No Data Display */}
         {selectedDeceased && dataArray.length === 0 && (
-          <Paper 
-            elevation={2} 
-            sx={{ 
-              padding: "40px", 
+          <Paper
+            elevation={2}
+            sx={{
+              padding: "40px",
               textAlign: "center",
               borderRadius: "12px",
-              background: "linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%)"
+              background: "linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%)",
             }}
           >
-            <FuneralIcon sx={{ fontSize: 60, color: "#ccc", marginBottom: "20px" }} />
+            <FuneralIcon
+              sx={{ fontSize: 60, color: "#ccc", marginBottom: "20px" }}
+            />
             <Typography variant="h6" color="textSecondary" gutterBottom>
               අතිරේක ආධාර හිඟ සාමාජිකයන් නොමැත
             </Typography>
@@ -554,7 +712,7 @@ export default function ExtraDue() {
                 textTransform: "none",
                 borderRadius: "8px",
                 paddingX: "30px",
-                paddingY: "12px"
+                paddingY: "12px",
               }}
             >
               නව සෙවුමක් ආරම්භ කරන්න
