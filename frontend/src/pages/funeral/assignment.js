@@ -19,6 +19,7 @@ import html2canvas from "html2canvas"
 import "jspdf/dist/jspdf.es.min.js"
 
 import { navigate } from "gatsby"
+import { useLocation } from "@reach/router"
 import api from "../../utils/api"
 import loadable from "@loadable/component"
 const AuthComponent = loadable(() =>
@@ -47,6 +48,7 @@ export default function Assignment() {
   const [selectedDate, setSelectedDate] = useState(dayjs())
   const [areaAdminInfo, setAreaAdminInfo] = useState("") // Store area admin info for preview
   const [areaAdminHelperInfo, setAreaAdminHelperInfo] = useState("") // Store area admin helper info
+  const location = useLocation()
 
   const handleAuthStateChange = ({ isAuthenticated, roles }) => {
     setIsAuthenticated(isAuthenticated)
@@ -56,6 +58,41 @@ export default function Assignment() {
     }
   }
   useEffect(() => {
+    // If navigated here with state to auto-populate (from deathById), load member and set deceased
+    try {
+      const loc = location
+      const navState = loc && loc.state ? loc.state : (typeof window !== 'undefined' && window.history && window.history.state ? window.history.state : null)
+      if (navState && navState.autoPopulate) {
+        const { memberId, deceasedId, date } = navState
+        if (memberId) {
+          api
+            .get(`${baseUrl}/member/getMembershipDeathById?member_id=${memberId}`)
+            .then(response => {
+              const data = response?.data?.data || {}
+              setMember(data.member || {})
+
+              // Prepare deceased options
+              const deceased = []
+              if (data.member?.dateOfDeath) {
+                deceased.push({ name: data.member.name, id: 'member', isMember: true })
+              }
+              (data.dependents || []).forEach(dependent => {
+                if (dependent.dateOfDeath) {
+                  deceased.push({ name: dependent.name, id: dependent._id, isMember: false, relationship: dependent.relationship || '' })
+                }
+              })
+              setDeceasedOptions(deceased)
+              if (deceasedId) setSelectedDeceased(deceasedId)
+              if (date) setSelectedDate(dayjs(date))
+            })
+            .catch(err => {
+              console.error('Error fetching member for auto-populate:', err)
+            })
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
     const fetchData = async () => {
       try {
         let lastAssignedMember_id
