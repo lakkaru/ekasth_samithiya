@@ -45,6 +45,7 @@ export default function ExtraDue() {
   const [dueMemberId, setDueMemberId] = useState("")
   const [deceasedOptions, setDeceasedOptions] = useState([])
   const [availableFunerals, setAvailableFunerals] = useState([])
+  const [selectedFuneralId, setSelectedFuneralId] = useState("")
 
   // Fetch available funerals on mount so the treasurer can pick without searching
   useEffect(() => {
@@ -60,6 +61,23 @@ export default function ExtraDue() {
       })
     return () => { mounted = false }
   }, [])
+
+  // Helper: derive deceased name from a funeral doc. deceased_id may be the member id
+  // or a dependent id. getAvailableFunerals populates `member_id` and its `dependents`.
+  const getDeceasedName = (fun) => {
+    if (!fun) return ''
+    const deceasedId = fun.deceased_id && fun.deceased_id._id ? String(fun.deceased_id._id) : String(fun.deceased_id || '')
+    // if deceased is the member
+    if (fun.member_id && String(fun.member_id._id) === deceasedId) {
+      return fun.member_id.name || ''
+    }
+    // try dependents
+    const dep = (fun.member_id && fun.member_id.dependents || []).find(d => String(d._id) === deceasedId)
+    if (dep) return dep.name || ''
+    // if deceased_id was populated as an object with name
+    if (fun.deceased_id && typeof fun.deceased_id === 'object' && fun.deceased_id.name) return fun.deceased_id.name
+    return ''
+  }
   const [selectedDeceased, setSelectedDeceased] = useState("")
   const [amount, setAmount] = useState("")
   const [updateTrigger, setUpdateTrigger] = useState(false)
@@ -139,20 +157,20 @@ export default function ExtraDue() {
     setError("")
 
     try {
+      // derive deceased_id from selected funeral
+      const selectedFun = (availableFunerals || []).find(f => String(f._id) === String(selectedFuneralId))
+      const deceasedIdToSend = selectedFun ? (selectedFun.deceased_id && selectedFun.deceased_id._id ? selectedFun.deceased_id._id : (selectedFun.deceased_id || '')) : selectedDeceased
       let dueData = {
         dueMemberId,
         amount,
-        deceased_id: selectedDeceased,
+        deceased_id: deceasedIdToSend,
       }
 
       const res = await api.post(`${baseUrl}/funeral/updateMemberExtraDueFines`, dueData)
       const updatedDue = res?.data?.updatedDue || null
 
       // Find funeral object for the selected deceased (if available)
-      const matchingFuneral = (availableFunerals || []).find(fun => {
-        const deceasedId = fun.deceased_id && fun.deceased_id._id ? fun.deceased_id._id : (fun.deceased_id || '');
-        return String(deceasedId) === String(selectedDeceased);
-      }) || null
+      const matchingFuneral = (availableFunerals || []).find(fun => String(fun._id) === String(selectedFuneralId)) || null
 
       // Save last added extra due for confirmation display
       setLastAddedExtraDue({
@@ -176,38 +194,36 @@ export default function ExtraDue() {
     }
   }
   useEffect(() => {
-    if (selectedDeceased !== "") {
-      api
-        .get(
-          `${baseUrl}/funeral/getFuneralExDueMembersByDeceasedId?deceased_id=${selectedDeceased}`
+    // When a funeral is selected, derive its deceased_id and load extraDue members
+    if (!selectedFuneralId) return
+    const fun = (availableFunerals || []).find(f => String(f._id) === String(selectedFuneralId))
+    if (!fun) return
+    const deceasedId = fun.deceased_id && fun.deceased_id._id ? fun.deceased_id._id : (fun.deceased_id || '')
+    setSelectedDeceased(deceasedId)
+    api
+      .get(`${baseUrl}/funeral/getFuneralExDueMembersByDeceasedId?deceased_id=${deceasedId}`)
+      .then(res => {
+        const addedDues = res.data.extraDueMembersPaidInfo || []
+        setDataArray(
+          addedDues.map(addedDue => ({
+            ...addedDue,
+            delete: !roles.includes("auditor") ? (
+              <Button
+                variant="contained"
+                color="error"
+                size="small"
+                startIcon={<DeleteIcon />}
+                onClick={() => handleDelete(addedDue.id, addedDue.memberId)}
+                sx={{ textTransform: "none", borderRadius: "6px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}
+              >
+                ඉවත් කරන්න
+              </Button>
+            ) : null,
+          }))
         )
-        .then(res => {
-          console.log(res.data.extraDueMembersPaidInfo)
-          const addedDues = res.data.extraDueMembersPaidInfo
-          setDataArray(
-            addedDues.map(addedDue => ({
-              ...addedDue,
-              delete: !roles.includes("auditor") ? (
-                <Button
-                  variant="contained"
-                  color="error"
-                  size="small"
-                  startIcon={<DeleteIcon />}
-                  onClick={() => handleDelete(addedDue.id, addedDue.memberId)}
-                  sx={{
-                    textTransform: "none",
-                    borderRadius: "6px",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-                  }}
-                >
-                  ඉවත් කරන්න
-                </Button>
-              ) : null,
-            }))
-          )
-        })
-    }
-  }, [selectedDeceased, updateTrigger])
+      })
+      .catch(err => console.error('Error loading extraDue members for funeral:', err))
+  }, [selectedFuneralId, updateTrigger, availableFunerals])
   return (
     <Layout>
       <AuthComponent onAuthStateChange={handleAuthStateChange} />
@@ -272,9 +288,9 @@ export default function ExtraDue() {
           <Grid2 
             container 
             spacing={3} 
-            alignItems="center"
+            alignItems="flex-start"
           >
-            <Grid2 size={{ xs: 12, sm: 5 }}>
+            <Grid2 size={{ xs: 12, sm: 6 }}>
               {/* Deceased options from searched member (if any) */}
               {member._id && (
                 <Select
@@ -302,8 +318,8 @@ export default function ExtraDue() {
               {availableFunerals && availableFunerals.length > 0 && (
                 <Select
                   fullWidth
-                  value={selectedDeceased}
-                  onChange={e => setSelectedDeceased(e.target.value)}
+                  value={selectedFuneralId}
+                  onChange={e => setSelectedFuneralId(e.target.value)}
                   displayEmpty
                   sx={{ height: "56px" }}
                 >
@@ -311,15 +327,15 @@ export default function ExtraDue() {
                     ලබා ගත හැකි අවමංගල්‍ය තෝරන්න
                   </MenuItem>
                   {availableFunerals.map(fun => {
-                    const deceasedId = fun.deceased_id && fun.deceased_id._id ? fun.deceased_id._id : (fun.deceased_id || '')
-                    const displayName = fun.member_id?.name || 'Unknown'
                     const dateStr = fun.date ? new Date(fun.date).toLocaleDateString() : ''
+                    const displayName = fun.member_id?.name || 'Unknown'
+                    const memberId = fun.member_id?.member_id || ''
                     return (
-                      <MenuItem key={fun._id} value={deceasedId}>
+                      <MenuItem key={fun._id} value={fun._id}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           <FuneralIcon sx={{ marginRight: '8px', color: 'text.secondary' }} />
                           <Box>
-                            <div>{displayName}</div>
+                            <div style={{ fontWeight: 700 }}>{memberId} - {displayName}</div>
                             <div style={{ fontSize: '.8rem', color: '#666' }}>{dateStr}</div>
                           </Box>
                         </Box>
@@ -329,12 +345,31 @@ export default function ExtraDue() {
                 </Select>
               )}
             </Grid2>
+            
+            {/* Deceased person details next to select box for horizontal layout */}
+            <Grid2 size={{ xs: 12, sm: 6 }}>
+              {selectedFuneralId && (() => {
+                const fun = (availableFunerals || []).find(f => String(f._id) === String(selectedFuneralId))
+                if (!fun) return null
+                const deceasedName = getDeceasedName(fun)
+                return (
+                  <Card sx={{ backgroundColor: '#fffde7', height: '100%' }}>
+                    <CardContent>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>මියගිය පුද්ගලයා විස්තර</Typography>
+                      <Typography><strong>නම:</strong> {deceasedName}</Typography>
+                      {fun.member_id?.area && <Typography><strong>ප්‍රදේශය:</strong> {fun.member_id.area}</Typography>}
+                      {fun.date && <Typography><strong>දිනය:</strong> {new Date(fun.date).toLocaleDateString()}</Typography>}
+                    </CardContent>
+                  </Card>
+                )
+              })()}
+            </Grid2>
           </Grid2>
 
           {/* Member info display removed — selection is via available funerals */}
         </Paper>
         {/* Add Extra Due Section - Hidden for auditors since they should only view data */}
-        {selectedDeceased && !roles.includes("auditor") && (
+        {selectedFuneralId && !roles.includes("auditor") && (
           <Paper 
             elevation={4} 
             sx={{ 
@@ -359,7 +394,7 @@ export default function ExtraDue() {
               අතිරේක ආධාර හිඟ මුදල් ඇතුලත් කරන්න
             </Typography>
             
-            <Grid2 container spacing={3} alignItems="center">
+              <Grid2 container spacing={3} alignItems="center">
               <Grid2 size={{ xs: 12, sm: 4 }}>
                 <TextField
                   fullWidth
@@ -375,6 +410,8 @@ export default function ExtraDue() {
                   }}
                 />
               </Grid2>
+
+              
               
               <Grid2 size={{ xs: 12, sm: 4 }}>
                 <TextField
@@ -425,7 +462,14 @@ export default function ExtraDue() {
               <Typography><strong>නම:</strong> {lastAddedExtraDue.name}</Typography>
               <Typography><strong>මුදල:</strong> {formatCurrency(lastAddedExtraDue.amount)}</Typography>
               {lastAddedExtraDue.funeral && (
-                <Typography><strong>අවමංගල්‍යය:</strong> {lastAddedExtraDue.funeral.member_id?.name || '-'} ({new Date(lastAddedExtraDue.funeral.date).toLocaleDateString()})</Typography>
+                <Typography>
+                  <strong>අවමංගල්‍යය:</strong> {lastAddedExtraDue.funeral.member_id?.name || '-'} ({new Date(lastAddedExtraDue.funeral.date).toLocaleDateString()})
+                </Typography>
+              )}
+              {lastAddedExtraDue.funeral && (
+                <Typography>
+                  <strong>මියගිය:</strong> {getDeceasedName(lastAddedExtraDue.funeral) || '-'}
+                </Typography>
               )}
               <Box sx={{ mt: 2 }}>
                 <Button variant="contained" color="primary" onClick={() => setLastAddedExtraDue(null)} sx={{ mr: 2 }}>හරි</Button>
