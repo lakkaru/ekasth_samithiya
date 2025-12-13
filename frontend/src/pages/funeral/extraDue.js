@@ -41,7 +41,6 @@ export default function ExtraDue() {
   const [roles, setRoles] = useState([])
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
-  const [memberId, setMemberId] = useState("")
   const [member, setMember] = useState({})
   const [dueMemberId, setDueMemberId] = useState("")
   const [deceasedOptions, setDeceasedOptions] = useState([])
@@ -96,52 +95,7 @@ export default function ExtraDue() {
     }).format(Math.abs(amount) || 0)
   }
 
-  const getMemberById = async () => {
-    if (!memberId) {
-      setError("සාමාජික අංකය ඇතුලත් කරන්න")
-      return
-    }
-
-    setSearchLoading(true)
-    setError("")
-    
-    try {
-      const response = await api.get(`${baseUrl}/member/getMembershipDeathById?member_id=${memberId}`)
-      const data = response?.data?.data || {}
-      console.log(data.member)
-      setMember(data.member || {})
-
-      // Prepare deceased options
-      const deceased = []
-      if (data.member?.dateOfDeath) {
-        deceased.push({
-          name: data.member.name,
-          id: "member",
-          isMember: true,
-        })
-      }
-      data.dependents.forEach(dependent => {
-        if (dependent.dateOfDeath) {
-          deceased.push({
-            name: dependent.name,
-            id: dependent._id,
-            isMember: false,
-          })
-        }
-      })
-      setDeceasedOptions(deceased)
-      setAvailableFunerals(prev => prev)
-      
-      if (deceased.length === 0) {
-        setError("මෙම සාමාජිකයා සඳහා මරණ සටහන් නොමැත")
-      }
-    } catch (error) {
-      console.error("Axios error: ", error)
-      setError("සාමාජික තොරතුරු ලබා ගැනීමේදී දෝෂයක් ඇති විය")
-    } finally {
-      setSearchLoading(false)
-    }
-  }
+  // Member search removed — treasurer can select funerals directly
   const handleSelectChange = event => {
     setSelectedDeceased(event.target.value)
     // console.log(event.target.value)
@@ -166,7 +120,6 @@ export default function ExtraDue() {
   }
 
   const resetForm = () => {
-    setMemberId("")
     setMember({})
     setDeceasedOptions([])
     setSelectedDeceased("")
@@ -321,41 +274,6 @@ export default function ExtraDue() {
             spacing={3} 
             alignItems="center"
           >
-            <Grid2 size={{ xs: 12, sm: 4 }}>
-              <TextField
-                fullWidth
-                label="සාමාජික අංකය"
-                variant="outlined"
-                type="number"
-                value={memberId}
-                onChange={e => {
-                  setMemberId(e.target.value)
-                  setDeceasedOptions([])
-                  setSelectedDeceased("")
-                  setMember({})
-                  setError("")
-                }}
-                placeholder="සාමාජික අංකය ඇතුලත් කරන්න"
-                InputProps={{
-                  startAdornment: <PersonIcon sx={{ mr: 1, color: "text.secondary" }} />
-                }}
-              />
-            </Grid2>
-            <Grid2 size={{ xs: 12, sm: 3 }}>
-              <Button
-                variant="contained"
-                onClick={getMemberById}
-                disabled={searchLoading || !memberId}
-                startIcon={searchLoading ? <CircularProgress size={20} color="inherit" /> : <SearchIcon />}
-                sx={{
-                  height: "56px",
-                  textTransform: "none",
-                  borderRadius: "8px"
-                }}
-              >
-                {searchLoading ? "සොයමින්..." : "සොයන්න"}
-              </Button>
-            </Grid2>
             <Grid2 size={{ xs: 12, sm: 5 }}>
               {/* Deceased options from searched member (if any) */}
               {member._id && (
@@ -413,34 +331,7 @@ export default function ExtraDue() {
             </Grid2>
           </Grid2>
 
-          {/* Member Info Display */}
-          {member.name && (
-            <Card sx={{ marginTop: "20px", backgroundColor: "#f8f9fa" }}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom color="primary">
-                  සාමාජික තොරතුරු
-                </Typography>
-                <Grid2 container spacing={2}>
-                  <Grid2 size={{ xs: 6, sm: 3 }}>
-                    <Typography variant="body2" color="textSecondary">නම:</Typography>
-                    <Typography variant="body1" fontWeight="bold">{member.name}</Typography>
-                  </Grid2>
-                  <Grid2 size={{ xs: 6, sm: 3 }}>
-                    <Typography variant="body2" color="textSecondary">ප්‍රදේශය:</Typography>
-                    <Typography variant="body1">{member.area || "නොමැත"}</Typography>
-                  </Grid2>
-                  <Grid2 size={{ xs: 6, sm: 3 }}>
-                    <Typography variant="body2" color="textSecondary">ජංගම:</Typography>
-                    <Typography variant="body1">{member.mob_tel || "නොමැත"}</Typography>
-                  </Grid2>
-                  <Grid2 size={{ xs: 6, sm: 3 }}>
-                    <Typography variant="body2" color="textSecondary">නිවස:</Typography>
-                    <Typography variant="body1">{member.res_tel || "නොමැත"}</Typography>
-                  </Grid2>
-                </Grid2>
-              </CardContent>
-            </Card>
-          )}
+          {/* Member info display removed — selection is via available funerals */}
         </Paper>
         {/* Add Extra Due Section - Hidden for auditors since they should only view data */}
         {selectedDeceased && !roles.includes("auditor") && (
