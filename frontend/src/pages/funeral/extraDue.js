@@ -67,6 +67,7 @@ export default function ExtraDue() {
   const [loading, setLoading] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
   const [error, setError] = useState("")
+  const [lastAddedExtraDue, setLastAddedExtraDue] = useState(null)
 
   // const [dueData, setDueData] = useState(0)
   const [dataArray, setDataArray] = useState([])
@@ -191,7 +192,24 @@ export default function ExtraDue() {
         deceased_id: selectedDeceased,
       }
 
-      await api.post(`${baseUrl}/funeral/updateMemberExtraDueFines`, dueData)
+      const res = await api.post(`${baseUrl}/funeral/updateMemberExtraDueFines`, dueData)
+      const updatedDue = res?.data?.updatedDue || null
+
+      // Find funeral object for the selected deceased (if available)
+      const matchingFuneral = (availableFunerals || []).find(fun => {
+        const deceasedId = fun.deceased_id && fun.deceased_id._id ? fun.deceased_id._id : (fun.deceased_id || '');
+        return String(deceasedId) === String(selectedDeceased);
+      }) || null
+
+      // Save last added extra due for confirmation display
+      setLastAddedExtraDue({
+        member_id: updatedDue?.member_id || dueMemberId,
+        name: updatedDue?.name || '',
+        amount: Number(amount),
+        funeral: matchingFuneral,
+        fines: updatedDue?.fines || []
+      })
+
       // Clear form after successful submission
       setDueMemberId("")
       setAmount("")
@@ -504,6 +522,25 @@ export default function ExtraDue() {
                 </Button>
               </Grid2>
             </Grid2>
+          </Paper>
+        )}
+
+        {/* Confirmation panel for last added extra due */}
+        {lastAddedExtraDue && (
+          <Paper elevation={3} sx={{ p: 3, mb: 3, borderRadius: 2, backgroundColor: '#e8f5e9' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: '#2e7d32' }}>අතිරේක ආධාර හිඟ එකතු කරන ලදි</Typography>
+            <Box sx={{ mt: 1 }}>
+              <Typography><strong>සා. අංකය:</strong> {lastAddedExtraDue.member_id}</Typography>
+              <Typography><strong>නම:</strong> {lastAddedExtraDue.name}</Typography>
+              <Typography><strong>මුදල:</strong> {formatCurrency(lastAddedExtraDue.amount)}</Typography>
+              {lastAddedExtraDue.funeral && (
+                <Typography><strong>අවමංගල්‍යය:</strong> {lastAddedExtraDue.funeral.member_id?.name || '-'} ({new Date(lastAddedExtraDue.funeral.date).toLocaleDateString()})</Typography>
+              )}
+              <Box sx={{ mt: 2 }}>
+                <Button variant="contained" color="primary" onClick={() => setLastAddedExtraDue(null)} sx={{ mr: 2 }}>හරි</Button>
+                <Button variant="outlined" onClick={() => { setLastAddedExtraDue(null); resetForm(); }}>නව සෙවුමක්</Button>
+              </Box>
+            </Box>
           </Paper>
         )}
 
