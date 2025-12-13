@@ -209,7 +209,31 @@ export default function DeathById() {
 
   const handleFuneral = () => {
     console.log("Funeral")
-    navigate("/funeral/assignment")
+    // navigate to assignment page and request auto-population of assignments
+    const memberObj = familyRegister[0]
+    const deceasedObj =
+      selectedDeath === 0
+        ? { name: familyRegister[0]?.name, id: "member", isMember: true }
+        : {
+            name: familyRegister[selectedDeath]?.name,
+            id: familyRegister[selectedDeath]?._id,
+            isMember: false,
+            relationship: familyRegister[selectedDeath]?.relationship || "",
+          }
+
+    navigate("/funeral/assignment", {
+      state: {
+        autoPopulate: true,
+        member: {
+          _id: memberObj?._id,
+          name: memberObj?.name,
+          member_id: memberId || memberObj?.member_id,
+          area: memberObj?.area,
+        },
+        deceased: deceasedObj,
+        date: selectedDate ? selectedDate.toISOString() : null,
+      },
+    })
   }
 
   return (
