@@ -64,11 +64,12 @@ export default function DeathById() {
     select: !familyMember.dateOfDeath ? (
       <Radio
         checked={selectedDeath === index}
-        onChange={() => setSelectedDeath(index)}
+        // Toggle selection: clicking an already-selected radio will unselect
+        onClick={() => setSelectedDeath(prev => (prev === index ? null : index))}
         value={index}
         name="death-selection"
       />
-    ) : familyMember.dateOfDeath.split("T")[0], // Render null if the member has died
+    ) : familyMember.dateOfDeath.split("T")[0], // Show date if already dead
   }))
 
   //   console.log("Mapped Data Array:", dataArray) // Debug mapped data array
