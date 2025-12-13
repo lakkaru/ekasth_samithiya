@@ -49,6 +49,7 @@ export default function Assignment() {
   const [areaAdminInfo, setAreaAdminInfo] = useState("") // Store area admin info for preview
   const [areaAdminHelperInfo, setAreaAdminHelperInfo] = useState("") // Store area admin helper info
   const location = useLocation()
+  const [autoPopulated, setAutoPopulated] = useState(false)
 
   const handleAuthStateChange = ({ isAuthenticated, roles }) => {
     setIsAuthenticated(isAuthenticated)
@@ -58,36 +59,33 @@ export default function Assignment() {
     }
   }
   useEffect(() => {
-    // If navigated here with state to auto-populate (from deathById), load member and set deceased
+    // If navigated here with state to auto-populate (from deathById), use passed member/deceased/date
     try {
-      const loc = location
-      const navState = loc && loc.state ? loc.state : (typeof window !== 'undefined' && window.history && window.history.state ? window.history.state : null)
-      if (navState && navState.autoPopulate) {
-        const { memberId, deceasedId, date } = navState
-        if (memberId) {
-          api
-            .get(`${baseUrl}/member/getMembershipDeathById?member_id=${memberId}`)
-            .then(response => {
-              const data = response?.data?.data || {}
-              setMember(data.member || {})
+      if (!autoPopulated) {
+        const loc = location
+        const navState = loc && loc.state ? loc.state : (typeof window !== 'undefined' && window.history && window.history.state ? window.history.state : null)
+        if (navState && navState.autoPopulate) {
+          const { member: navMember, deceased: navDeceased, date } = navState
+          if (navMember) {
+            // Use passed member object without extra API calls
+            setMember({
+              _id: navMember._id,
+              name: navMember.name,
+              member_id: navMember.member_id,
+              area: navMember.area,
+            })
+              // populate memberId input so it is visible in the form
+              if (navMember.member_id) setMemberId(navMember.member_id)
 
-              // Prepare deceased options
-              const deceased = []
-              if (data.member?.dateOfDeath) {
-                deceased.push({ name: data.member.name, id: 'member', isMember: true })
-              }
-              (data.dependents || []).forEach(dependent => {
-                if (dependent.dateOfDeath) {
-                  deceased.push({ name: dependent.name, id: dependent._id, isMember: false, relationship: dependent.relationship || '' })
-                }
-              })
-              setDeceasedOptions(deceased)
-              if (deceasedId) setSelectedDeceased(deceasedId)
-              if (date) setSelectedDate(dayjs(date))
-            })
-            .catch(err => {
-              console.error('Error fetching member for auto-populate:', err)
-            })
+            const deceased = []
+            if (navDeceased) {
+              deceased.push(navDeceased)
+            }
+            setDeceasedOptions(deceased)
+            if (navDeceased) setSelectedDeceased(navDeceased.id)
+            if (date) setSelectedDate(dayjs(date))
+            setAutoPopulated(true)
+          }
         }
       }
     } catch (e) {
@@ -660,40 +658,51 @@ export default function Assignment() {
             gap: "50px",
           }}
         >
-          <Typography>සාමාජික අංකය</Typography>
-          <TextField
-            id="outlined-basic"
-            label="Your ID"
-            variant="outlined"
-            type="number"
-            value={memberId}
-            onChange={e => {
-              setMemberId(e.target.value)
-              setDeceasedOptions([])
-            }}
-            // onBlur={getMemberById}
-          />
-          <Button variant="contained" onClick={getMemberById}>
-            Search
-          </Button>
-          <Box>
-            {/* <Typography>Deceased Options</Typography> */}
-            <Select
-              value={selectedDeceased}
-              onChange={handleSelectChange}
-              fullWidth
-              displayEmpty
-            >
-              <MenuItem value="" disabled>
-                තෝරන්න
-              </MenuItem>
-              {deceasedOptions.map(option => (
-                <MenuItem key={option.id} value={option.id}>
-                  {option.isMember ? `${option.name}` : `${option.name}`}
-                </MenuItem>
-              ))}
-            </Select>
-          </Box>
+          {autoPopulated ? (
+            // Show concise info when coming from deathById (auto-populated)
+            <Box>
+              <Typography variant="subtitle1">සාමාජික අංකය: {member.member_id || "-"}</Typography>
+              <Typography variant="subtitle2">නම: {member.name || "-"}</Typography>
+              <Typography variant="body2" sx={{ mt: 1 }}>මියගිය පුද්ගලයා: {deceasedOptions[0]?.name || "-"}</Typography>
+            </Box>
+          ) : (
+            <>
+              <Typography>සාමාජික අංකය</Typography>
+              <TextField
+                id="outlined-basic"
+                label="Your ID"
+                variant="outlined"
+                type="number"
+                value={memberId}
+                onChange={e => {
+                  setMemberId(e.target.value)
+                  setDeceasedOptions([])
+                }}
+                // onBlur={getMemberById}
+              />
+              <Button variant="contained" onClick={getMemberById}>
+                Search
+              </Button>
+              <Box>
+                {/* <Typography>Deceased Options</Typography> */}
+                <Select
+                  value={selectedDeceased}
+                  onChange={handleSelectChange}
+                  fullWidth
+                  displayEmpty
+                >
+                  <MenuItem value="" disabled>
+                    තෝරන්න
+                  </MenuItem>
+                  {deceasedOptions.map(option => (
+                    <MenuItem key={option.id} value={option.id}>
+                      {option.isMember ? `${option.name}` : `${option.name}`}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Box>
+            </>
+          )}
         </Box>
         <hr />
         {selectedDeceased && (
