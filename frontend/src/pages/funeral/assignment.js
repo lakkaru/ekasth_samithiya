@@ -50,6 +50,17 @@ export default function Assignment() {
   const [areaAdminHelperInfo, setAreaAdminHelperInfo] = useState("") // Store area admin helper info
   const location = useLocation()
   const [autoPopulated, setAutoPopulated] = useState(false)
+  // If auto-populated and members list is available, try to resolve numeric member_id from fetched members
+  useEffect(() => {
+    if (autoPopulated && member && member._id && allMembers && allMembers.length > 0) {
+      const found = allMembers.find(m => String(m._id) === String(member._id))
+      if (found && found.member_id) {
+        setMemberId(found.member_id)
+        // also set member.member_id for display
+        setMember(prev => ({ ...prev, member_id: found.member_id }))
+      }
+    }
+  }, [autoPopulated, allMembers])
 
   const handleAuthStateChange = ({ isAuthenticated, roles }) => {
     setIsAuthenticated(isAuthenticated)
@@ -75,7 +86,8 @@ export default function Assignment() {
               area: navMember.area,
             })
               // populate memberId input so it is visible in the form
-              if (navMember.member_id) setMemberId(navMember.member_id)
+              const navMemberId = navMember.member_id || navMember.memberId || navMember.member_id?.toString()
+              if (navMemberId) setMemberId(String(navMemberId))
 
             const deceased = []
             if (navDeceased) {
@@ -648,7 +660,7 @@ export default function Assignment() {
     <Layout>
       <AuthComponent onAuthStateChange={handleAuthStateChange} />
       <section>
-        <Typography variant="h6">විල්බාගෙදර එක්සත් අවමංගල්‍ය ධර්ම සමිතිය</Typography>
+        <Typography variant="h6">විල්බාගෙදර එක්සත් අවමංගල්‍යාධාර සමිතිය</Typography>
         <Box
           sx={{
             display: "flex",
@@ -661,7 +673,7 @@ export default function Assignment() {
           {autoPopulated ? (
             // Show concise info when coming from deathById (auto-populated)
             <Box>
-              <Typography variant="subtitle1">සාමාජික අංකය: {member.member_id || "-"}</Typography>
+              <Typography variant="subtitle1">සාමාජික අංකය: {member.member_id || (memberId ? memberId : (member._id ? member._id : "-"))}</Typography>
               <Typography variant="subtitle2">නම: {member.name || "-"}</Typography>
               <Typography variant="body2" sx={{ mt: 1 }}>මියගිය පුද්ගලයා: {deceasedOptions[0]?.name || "-"}</Typography>
             </Box>
