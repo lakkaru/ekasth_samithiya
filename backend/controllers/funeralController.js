@@ -8,11 +8,30 @@ const { Admin } = require("../models/Admin");
 //getLast cemetery Assignment member and removed members for next duty assignments
 exports.getLastAssignmentInfo = async (req, res) => {
   try {
-    const lastAssignment = await Funeral.find().sort({ _id: -1 }).limit(1);
-    const lastMember_id = lastAssignment[0].cemeteryAssignments[14].member_id;
-    const removedMembers = lastAssignment[0].removedMembers;
+    // Find the last funeral that has cemetery assignments (skip funerals without assignments)
+    const funerals = await Funeral.find().sort({ _id: -1 }).limit(50);
+    
+    // Find the first funeral with valid cemetery assignments
+    let lastAssignment = null;
+    for (const funeral of funerals) {
+      if (funeral.cemeteryAssignments && 
+          funeral.cemeteryAssignments.length >= 15 && 
+          funeral.cemeteryAssignments[14] && 
+          funeral.cemeteryAssignments[14].member_id) {
+        lastAssignment = funeral;
+        break;
+      }
+    }
+    
+    if (!lastAssignment) {
+      // No funeral with assignments found, return defaults
+      return res.status(200).json({ lastMember_id: 0, removedMembers_ids: [] });
+    }
+    
+    const lastMember_id = lastAssignment.cemeteryAssignments[14].member_id;
+    const removedMembers = lastAssignment.removedMembers || [];
     const removedMembers_ids = removedMembers.map((member) => member.member_id);
-    // const lastMember=await Member.findOne({_id:lastMember_id}).select("member_id");
+    
     res.status(200).json({ lastMember_id, removedMembers_ids });
   } catch (error) {
     res

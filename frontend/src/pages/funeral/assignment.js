@@ -177,9 +177,15 @@ export default function Assignment() {
       }
 
       // Set assignments
+      const hasAssignments = funeral.cemeteryAssignments?.length > 0 || funeral.funeralAssignments?.length > 0
       setCemeteryAssignments(funeral.cemeteryAssignments || [])
       setFuneralAssignments(funeral.funeralAssignments || [])
       setRemovedMembers(funeral.removedMembers || [])
+      
+      // If funeral has no assignments, mark as not using existing (so assignments can be generated)
+      if (!hasAssignments) {
+        setUseExistingFuneral(false)
+      }
 
       // Fetch area admin info
       if (funeral.member_id?.area) {
@@ -272,9 +278,19 @@ export default function Assignment() {
     }
 
     const fetchData = async () => {
+      // Only generate new assignments if we don't already have them loaded from an existing funeral
+      // This allows generating assignments for newly selected funerals or when member.area changes
+      const hasLoadedAssignments = useExistingFuneral && 
+                                   (cemeteryAssignments.length > 0 || funeralAssignments.length > 0);
+      
+      if (hasLoadedAssignments) {
+        console.log("Using existing funeral assignments - already loaded")
+        return
+      }
+
       try {
-        let lastAssignedMember_id
-        let lastRemovedMember_ids
+        let lastAssignedMember_id = 0
+        let lastRemovedMember_ids = []
         let allMembers = []
         let allAdmins = []
 
@@ -283,13 +299,16 @@ export default function Assignment() {
           await api
             .get(`${baseUrl}/funeral/getLastAssignmentInfo`)
             .then(response => {
-              lastAssignedMember_id = response.data.lastMember_id
-              lastRemovedMember_ids = response.data.removedMembers_ids
+              lastAssignedMember_id = response.data.lastMember_id || 0
+              lastRemovedMember_ids = response.data.removedMembers_ids || []
               // console.log("Last Member ID:", lastAssignedMember_id)
               // console.log("removedMembers:", lastRemovedMember_ids)}
             })
             .catch(error => {
               console.error("Error getting last assignment id:", error)
+              // Set defaults if error
+              lastAssignedMember_id = 0
+              lastRemovedMember_ids = []
             })
         }
 
@@ -387,14 +406,29 @@ export default function Assignment() {
           setFuneralAssignments(filteredMembers.slice(15, 30)) // Assign next 15 to funeral
 
           // Separate out 'free' or 'convenient' members
-          const releasedMembers = nextMembers.filter(
-            member =>
-              member.member_id <= filteredMembers[30].member_id &&
-              (member.status === "free" ||
-                member.status === "funeral-free" ||
-                member.status === "attendance-free")
-          )
-          setReleasedMembers(releasedMembers)
+          // Check if we have enough members before accessing index 30
+          if (filteredMembers.length > 30) {
+            const releasedMembers = nextMembers.filter(
+              member =>
+                member.member_id <= filteredMembers[30].member_id &&
+                (member.status === "free" ||
+                  member.status === "funeral-free" ||
+                  member.status === "attendance-free")
+            )
+            setReleasedMembers(releasedMembers)
+          } else {
+            // If we don't have 30+ members, include all free/convenient members up to what we have
+            const maxMemberId = filteredMembers.length > 0 ? 
+              Math.max(...filteredMembers.map(m => m.member_id)) : 0
+            const releasedMembers = nextMembers.filter(
+              member =>
+                member.member_id <= maxMemberId &&
+                (member.status === "free" ||
+                  member.status === "funeral-free" ||
+                  member.status === "attendance-free")
+            )
+            setReleasedMembers(releasedMembers)
+          }
           // console.log('releasedMembers: ', releasedMembers)
         }
         // Execute sequentially
