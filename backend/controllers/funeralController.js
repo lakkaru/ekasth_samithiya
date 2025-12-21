@@ -39,6 +39,58 @@ exports.getLastAssignmentInfo = async (req, res) => {
       .json({ message: "Error getting last assignment", error: error.message });
   }
 };
+
+// Update funeral assignments
+exports.updateFuneralAssignments = async (req, res) => {
+  try {
+    const { funeral_id } = req.params;
+    let {
+      date,
+      cemeteryAssignments,
+      funeralAssignments,
+      removedMembers,
+    } = req.body;
+
+    // Validate funeral_id
+    if (!funeral_id) {
+      return res.status(400).json({ message: "Funeral ID is required" });
+    }
+
+    // Find the funeral
+    const funeral = await Funeral.findById(funeral_id);
+    if (!funeral) {
+      return res.status(404).json({ message: "Funeral not found" });
+    }
+
+    // Update the assignments
+    const updateData = {
+      cemeteryAssignments: cemeteryAssignments || [],
+      funeralAssignments: funeralAssignments || [],
+      removedMembers: removedMembers || [],
+    };
+
+    // Update date if provided
+    if (date) {
+      updateData.date = date;
+    }
+
+    const updatedFuneral = await Funeral.findByIdAndUpdate(
+      funeral_id,
+      updateData,
+      { new: true }
+    );
+
+    res.status(200).json({
+      message: "Funeral assignments updated successfully",
+      funeral: updatedFuneral
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error updating funeral assignments", error: error.message });
+  }
+};
+
 //create a funeral event
 exports.createFuneral = async (req, res) => {
   try {

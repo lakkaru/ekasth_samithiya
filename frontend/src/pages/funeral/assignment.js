@@ -12,6 +12,7 @@ import {
   FormControl,
   InputLabel,
   Alert,
+  Chip,
 } from "@mui/material"
 import StickyHeadTable from "../../components/StickyHeadTable" // Import the StickyHeadTable component
 import dayjs from "dayjs"
@@ -59,6 +60,8 @@ export default function Assignment() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [useExistingFuneral, setUseExistingFuneral] = useState(false)
+  const [existingFuneralId, setExistingFuneralId] = useState(null)
+  const [hasExistingAssignments, setHasExistingAssignments] = useState(false)
   // If auto-populated and members list is available, try to resolve numeric member_id from fetched members
   useEffect(() => {
     if (autoPopulated && member && member._id && allMembers && allMembers.length > 0) {
@@ -130,6 +133,9 @@ export default function Assignment() {
       const response = await api.get(`${baseUrl}/funeral/getFuneralById/${funeralId}`)
       const funeral = response.data.funeral
       
+      // Store the funeral ID for updates
+      setExistingFuneralId(funeral._id)
+      
       // Populate form with funeral data
       setUseExistingFuneral(true)
       
@@ -178,6 +184,7 @@ export default function Assignment() {
 
       // Set assignments
       const hasAssignments = funeral.cemeteryAssignments?.length > 0 || funeral.funeralAssignments?.length > 0
+      setHasExistingAssignments(hasAssignments)
       setCemeteryAssignments(funeral.cemeteryAssignments || [])
       setFuneralAssignments(funeral.funeralAssignments || [])
       setRemovedMembers(funeral.removedMembers || [])
@@ -680,40 +687,59 @@ export default function Assignment() {
       ),
     }))
 
-  const saveDuties = () => {
+  const saveDuties = async () => {
     console.log("removed: ", removedMembers)
-    api
-      .post(`${baseUrl}/funeral/createFuneral`, {
-        date: selectedDate.format("YYYY-MM-DD"),
-        member_id: member._id,
-        deceased_id: selectedDeceased,
-        cemeteryAssignments: cemeteryAssignments.map(member => ({
-          _id: member._id,
-          member_id: member.member_id,
-          name: member.name,
-        })),
-        funeralAssignments: funeralAssignments.map(member => ({
-          _id: member._id,
-          member_id: member.member_id,
-          name: member.name,
-        })),
-        removedMembers: removedMembers.map(member => ({
-          _id: member._id,
-          member_id: member.member_id,
-          name: member.name,
-        })), // Include removed members
-      })
-      .then(response => {
+    
+    const assignmentData = {
+      date: selectedDate.format("YYYY-MM-DD"),
+      cemeteryAssignments: cemeteryAssignments.map(member => ({
+        _id: member._id,
+        member_id: member.member_id,
+        name: member.name,
+      })),
+      funeralAssignments: funeralAssignments.map(member => ({
+        _id: member._id,
+        member_id: member.member_id,
+        name: member.name,
+      })),
+      removedMembers: removedMembers.map(member => ({
+        _id: member._id,
+        member_id: member.member_id,
+        name: member.name,
+      })),
+    }
+
+    try {
+      if (existingFuneralId) {
+        // Update existing funeral
+        const response = await api.put(
+          `${baseUrl}/funeral/updateFuneralAssignments/${existingFuneralId}`,
+          assignmentData
+        )
+        console.log("Funeral assignments updated successfully:", response.data)
+        setHasExistingAssignments(true)
+        alert("පැවරීම් යාවත්කාලින කර ඇත")
+      } else {
+        // Create new funeral
+        const response = await api.post(`${baseUrl}/funeral/createFuneral`, {
+          ...assignmentData,
+          member_id: member._id,
+          deceased_id: selectedDeceased,
+        })
         console.log("Funeral duties saved successfully:", response.data)
-        setSelectedDeceased("")
-        setRemovedMembers([])
-        setReleasedMembers([])
-        setCemeteryAssignments([])
-        setFuneralAssignments([])
-      })
-      .catch(error => {
-        console.error("Error saving funeral duties:", error)
-      })
+        setExistingFuneralId(response.data._id)
+        setHasExistingAssignments(true)
+        alert("පැවරීම් සාර්ථකව සංරක්‍ෂිත කර ඇත")
+      }
+      
+      // Optionally refresh the funeral list
+      if (isAuthenticated && roles.includes("vice-secretary")) {
+        fetchAvailableFunerals()
+      }
+    } catch (error) {
+      console.error("Error saving funeral duties:", error)
+      alert("පැවරීම් සංරක්‍ෂිත කිරීමේදී දෝෂයක් ඇති විය")
+    }
   }
 
   const saveAsPDF = async () => {
@@ -908,7 +934,17 @@ export default function Assignment() {
         {/* Member Info Display - only show when funeral is selected or auto-populated */}
         {(autoPopulated || selectedFuneralId) && member.name && (
           <Box sx={{ mb: 2, p: 2, bgcolor: '#e3f2fd', borderRadius: 1 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>සාමාජික විස්තර:</Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>සාමාජික විස්තර:</Typography>
+              {hasExistingAssignments && (
+                <Chip 
+                  label="පැවරීම් සුරකින ලදී" 
+                  color="success" 
+                  size="small"
+                  sx={{ fontWeight: 'bold' }}
+                />
+              )}
+            </Box>
             <Typography variant="body1">සාමාජික අංකය: {member.member_id || "-"}</Typography>
             <Typography variant="body1">නම: {member.name || "-"}</Typography>
             {deceasedOptions.length > 0 && selectedDeceased && (
@@ -1117,8 +1153,8 @@ export default function Assignment() {
                 <Button onClick={saveAsPDF} variant="contained">
                   Download PDF
                 </Button>
-                <Button onClick={saveDuties} variant="contained">
-                  Save Funeral Duties
+                <Button onClick={saveDuties} variant="contained" color={hasExistingAssignments ? "warning" : "primary"}>
+                  {hasExistingAssignments ? "යාවත්කාල කරන්න" : "පැවරීම් සුරකින්න"}
                 </Button>
               </Box>
             </Box>
