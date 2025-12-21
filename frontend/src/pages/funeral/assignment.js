@@ -9,6 +9,9 @@ import {
   Typography,
   Select,
   MenuItem,
+  FormControl,
+  InputLabel,
+  Alert,
 } from "@mui/material"
 import StickyHeadTable from "../../components/StickyHeadTable" // Import the StickyHeadTable component
 import dayjs from "dayjs"
@@ -50,6 +53,12 @@ export default function Assignment() {
   const [areaAdminHelperInfo, setAreaAdminHelperInfo] = useState("") // Store area admin helper info
   const location = useLocation()
   const [autoPopulated, setAutoPopulated] = useState(false)
+  // Funeral selection states
+  const [availableFunerals, setAvailableFunerals] = useState([])
+  const [selectedFuneralId, setSelectedFuneralId] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [useExistingFuneral, setUseExistingFuneral] = useState(false)
   // If auto-populated and members list is available, try to resolve numeric member_id from fetched members
   useEffect(() => {
     if (autoPopulated && member && member._id && allMembers && allMembers.length > 0) {
@@ -69,6 +78,164 @@ export default function Assignment() {
       navigate("/login/user-login")
     }
   }
+
+  // Load available funerals when authenticated
+  useEffect(() => {
+    if (isAuthenticated && roles.includes("vice-secretary")) {
+      fetchAvailableFunerals()
+    }
+  }, [isAuthenticated, roles])
+
+  // Fetch available funerals
+  const fetchAvailableFunerals = async () => {
+    try {
+      setLoading(true)
+      setError("")
+      const response = await api.get(`${baseUrl}/funeral/getAvailableFunerals`)
+      setAvailableFunerals(response.data.funerals || [])
+    } catch (error) {
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        setError("ඔබට මෙම තොරතුරු බලන්න අවසරයක් නොමැත")
+        navigate("/login/user-login")
+      } else {
+        setError("අවමංගල්‍ය උත්සව ලබා ගැනීමේදී දෝෂයක් ඇති විය")
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Handle funeral selection from dropdown
+  const handleFuneralSelection = async (funeralId) => {
+    setSelectedFuneralId(funeralId)
+    if (!funeralId) {
+      // Clear selection
+      setUseExistingFuneral(false)
+      setMember({})
+      setMemberId("")
+      setDeceasedOptions([])
+      setSelectedDeceased("")
+      setCemeteryAssignments([])
+      setFuneralAssignments([])
+      setRemovedMembers([])
+      setReleasedMembers([])
+      setAreaAdminInfo("")
+      setAreaAdminHelperInfo("")
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError("")
+      const response = await api.get(`${baseUrl}/funeral/getFuneralById/${funeralId}`)
+      const funeral = response.data.funeral
+      
+      // Populate form with funeral data
+      setUseExistingFuneral(true)
+      
+      // Set member info
+      if (funeral.member_id) {
+        setMember({
+          _id: funeral.member_id._id,
+          name: funeral.member_id.name,
+          member_id: funeral.member_id.member_id,
+          area: funeral.member_id.area,
+        })
+        setMemberId(funeral.member_id.member_id || "")
+      }
+
+      // Set deceased info
+      if (funeral.member_id) {
+        const deceased = []
+        // Check if deceased is member or dependent
+        if (funeral.deceased_id === funeral.member_id._id || funeral.deceased_id === "member") {
+          deceased.push({
+            name: funeral.member_id.name,
+            id: "member",
+            isMember: true,
+          })
+          setSelectedDeceased("member")
+        } else if (funeral.member_id.dependents) {
+          // Find the dependent
+          const dependent = funeral.member_id.dependents.find(d => d._id === funeral.deceased_id)
+          if (dependent) {
+            deceased.push({
+              name: dependent.name,
+              id: dependent._id,
+              isMember: false,
+              relationship: dependent.relationship || "අවශ්‍ය නැත",
+            })
+            setSelectedDeceased(dependent._id)
+          }
+        }
+        setDeceasedOptions(deceased)
+      }
+
+      // Set date
+      if (funeral.date) {
+        setSelectedDate(dayjs(funeral.date))
+      }
+
+      // Set assignments
+      setCemeteryAssignments(funeral.cemeteryAssignments || [])
+      setFuneralAssignments(funeral.funeralAssignments || [])
+      setRemovedMembers(funeral.removedMembers || [])
+
+      // Fetch area admin info
+      if (funeral.member_id?.area) {
+        await fetchAreaAdminInfoForArea(funeral.member_id.area)
+      }
+    } catch (error) {
+      if (error.response?.status === 404) {
+        setError("අවමංගල්‍ය උත්සවය සොයා ගත නොහැක")
+      } else if (error.response?.status === 401 || error.response?.status === 403) {
+        setError("ඔබට මෙම තොරතුරු බලන්න අවසරයක් නොමැත")
+        navigate("/login/user-login")
+      } else {
+        setError("අවමංගල්‍ය තොරතුරු ලබා ගැනීමේදී දෝෂයක් ඇති විය")
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Fetch area admin info for a given area
+  const fetchAreaAdminInfoForArea = async (area) => {
+    if (area) {
+      try {
+        const adminResponse = await api.get(`${baseUrl}/admin-management/admin-structure`)
+        const adminData = adminResponse.data
+        
+        if (adminData && adminData.admin) {
+          const areaAdmin = adminData.admin.areaAdmins?.find(admin => admin.area === area)
+          if (areaAdmin) {
+            setAreaAdminInfo(`(${areaAdmin.memberId}) ${areaAdmin.name}`)
+            
+            const helpers = []
+            if (areaAdmin.helper1?.memberId && areaAdmin.helper1?.name) {
+              helpers.push({
+                memberId: areaAdmin.helper1.memberId,
+                name: areaAdmin.helper1.name
+              })
+            }
+            if (areaAdmin.helper2?.memberId && areaAdmin.helper2?.name) {
+              helpers.push({
+                memberId: areaAdmin.helper2.memberId,
+                name: areaAdmin.helper2.name
+              })
+            }
+            const sortedHelpers = helpers
+              .sort((a, b) => a.memberId - b.memberId)
+              .map(helper => `(${helper.memberId}) ${helper.name}`)
+            setAreaAdminHelperInfo(sortedHelpers.join(" සහ "))
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching area admin info:", error)
+      }
+    }
+  }
+
   useEffect(() => {
     // If navigated here with state to auto-populate (from deathById), use passed member/deceased/date
     try {
@@ -103,6 +270,7 @@ export default function Assignment() {
     } catch (e) {
       // ignore
     }
+
     const fetchData = async () => {
       try {
         let lastAssignedMember_id
@@ -660,14 +828,65 @@ export default function Assignment() {
     <Layout>
       <AuthComponent onAuthStateChange={handleAuthStateChange} />
       <section>
-        <Typography variant="h6">විල්බාගෙදර එක්සත් අවමංගල්‍යාධාර සමිතිය</Typography>
+        <Typography variant="h6">විල්බාගෙදර එක්සත් අවමංගල්‍යාධාර සමිතිය - අවමංගල්‍ය පැවරීම්</Typography>
+        
+        {/* Funeral Selection Section */}
+        {!autoPopulated && (
+          <Box sx={{ mb: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
+              පැවරුම් සඳහා අවමංගල්‍ය උත්සවයක් තෝරන්න
+            </Typography>
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>
+                {error}
+              </Alert>
+            )}
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel id="funeral-select-label">අවමංගල්‍ය උත්සවය තෝරන්න</InputLabel>
+              <Select
+                labelId="funeral-select-label"
+                value={selectedFuneralId}
+                onChange={(e) => handleFuneralSelection(e.target.value)}
+                label="අවමංගල්‍ය උත්සවය තෝරන්න"
+                disabled={loading}
+              >
+                <MenuItem value="" disabled>
+                  <em>කරුණාකර අවමංගල්‍යක් තෝරන්න</em>
+                </MenuItem>
+                {availableFunerals.map((funeral) => {
+                  const memberName = funeral.member_id?.name || "නොදන්නා"
+                  const memberId = funeral.member_id?.member_id || "N/A"
+                  const date = funeral.date ? dayjs(funeral.date).format("YYYY/MM/DD") : "දිනය නැත"
+                  return (
+                    <MenuItem key={funeral._id} value={funeral._id}>
+                      {`${date} - සාමාජික ${memberId} (${memberName})`}
+                    </MenuItem>
+                  )
+                })}
+              </Select>
+            </FormControl>
+            <Typography variant="caption" color="text.secondary">
+              * ලැයිස්තුවෙන් අවමංගල්‍ය උත්සවයක් තෝරන්න
+            </Typography>
+          </Box>
+        )}
+
+        {/* Member Info Display - only show when funeral is selected or auto-populated */}
+        {(autoPopulated || selectedFuneralId) && member.name && (
+          <Box sx={{ mb: 2, p: 2, bgcolor: '#e3f2fd', borderRadius: 1 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>සාමාජික විස්තර:</Typography>
+            <Typography variant="body1">සාමාජික අංකය: {member.member_id || "-"}</Typography>
+            <Typography variant="body1">නම: {member.name || "-"}</Typography>
+            {deceasedOptions.length > 0 && selectedDeceased && (
+              <Typography variant="body1">මියගිය පුද්ගලයා: {deceasedOptions.find(d => d.id === selectedDeceased)?.name || "-"}</Typography>
+            )}
+          </Box>
+        )}
+
+        {/* Hidden member ID search section - kept for backward compatibility */}
         <Box
           sx={{
-            display: "flex",
-            justifyContent: "flex-start",
-            alignItems: "center",
-            padding: "20px",
-            gap: "50px",
+            display: "none",
           }}
         >
           {autoPopulated ? (
@@ -679,10 +898,10 @@ export default function Assignment() {
             </Box>
           ) : (
             <>
-              <Typography>සාමාජික අංකය</Typography>
+              <Typography>අවමංගල්‍ය වූ සාමාජික අංකය</Typography>
               <TextField
                 id="outlined-basic"
-                label="Your ID"
+                label="Member ID"
                 variant="outlined"
                 type="number"
                 value={memberId}
