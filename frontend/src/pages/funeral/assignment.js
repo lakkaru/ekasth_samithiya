@@ -559,25 +559,30 @@ export default function Assignment() {
   }
 
   const generateHeadingText = () => {
-    const deceasedName = deceasedOptions.find(opt => opt.id === selectedDeceased)?.name || ''
-    const memberName = member.name || ''
-    const memberId = member.member_id || ''
-    const memberArea = member.area || ''
-    const funeralDate = selectedDate.format("YYYY/MM/DD")
-    
-    const selectedDeceasedObj = deceasedOptions.find(opt => opt.id === selectedDeceased)
+    const deceasedName = deceasedOptions.find(opt => opt.id === selectedDeceased)?.name || 'නොදන්නා';
+    const memberName = member.name || 'නොදන්නා';
+    const memberId = member.member_id || '000';
+    const memberArea = member.area || 'නොදන්නා';
+    const funeralDate = selectedDate.format("YYYY/MM/DD");
+
+    const selectedDeceasedObj = deceasedOptions.find(opt => opt.id === selectedDeceased);
     // Use actual relationship from dependent data or "සාමාජික" if it's the member
-    const relationship = selectedDeceasedObj?.isMember ? "සාමාජික" : (selectedDeceasedObj?.relationship || "භාර්යාව")
-    
+    const relationship = selectedDeceasedObj?.isMember ? "සාමාජික" : (selectedDeceasedObj?.relationship || "භාර්යාව");
+
     // Determine the appropriate gender term based on relationship
-    let genderTerm = "මහත්මියගේ" // Default for female
+    let genderTerm = "මහත්මියගේ"; // Default for female
     if (relationship === "සාමාජික" || relationship === "පුත්‍රයා" || relationship === "පියා") {
-      genderTerm = "මහතාගේ" // Male
+      genderTerm = "මහතාගේ"; // Male
     } else if (relationship === "භාර්යාව" || relationship === "දුව" || relationship === "මව") {
-      genderTerm = "මහත්මියගේ" // Female
+      genderTerm = "මහත්මියගේ"; // Female
     }
 
-    return `විල්බගෙදර එක්සත් අවමංගල්‍යධාර සමිතිය  විල්බාගෙදර වැව් ඉහල ගංගොඩ පදිංචිව සිටි සාමාජික අංක ${memberId} දරණ ${memberName} මහතාගේ ${relationship} වන ${deceasedName} ${genderTerm} අභාවය ${funeralDate} දින ${memberArea} ${areaAdminInfo} ගේ ප්‍රධානත්වයෙන් ${areaAdminHelperInfo} ගේ සහයෝගිත්වයෙන්.`
+    // Adjust text based on whether the deceased is a member or a dependent
+    if (selectedDeceasedObj?.isMember) {
+      return `විල්බගෙදර එක්සත් අවමංගල්‍යධාර සමිතිය ${memberArea} පදිංචිව සිටි සාමාජික අංක ${memberId} දරණ ${deceasedName} මහතා අභාවය ${funeralDate} දින ${areaAdminInfo} ගේ ප්‍රධානත්වයෙන් ${areaAdminHelperInfo} ගේ සහයෝගිත්වයෙන්.`;
+    } else {
+      return `විල්බගෙදර එක්සත් අවමංගල්‍යධාර සමිතිය ${memberArea.replace("පදිංචිව සිටි", "පදිංචි")} පදිංචි සාමාජික අංක ${memberId} දරණ ${memberName} මහතාගේ ${relationship} වන ${deceasedName} ${genderTerm} අභාවය ${funeralDate} දින ${areaAdminInfo} ගේ ප්‍රධානත්වයෙන් ${areaAdminHelperInfo} ගේ සහයෝගිත්වයෙන්.`;
+    }
   }
 
   const getNextMember = () => {
@@ -743,145 +748,205 @@ export default function Assignment() {
   }
 
   const saveAsPDF = async () => {
-    try {
-      console.log("Starting PDF generation...")
-      
-      // Create a temporary div for the heading with A4 margins
-      const headingDiv = document.createElement('div')
-      headingDiv.style.cssText = `
-        width: 210mm;
-        max-width: 794px;
-        padding: 25mm 20mm;
-        margin: 0 auto;
-        font-family: 'Noto Sans Sinhala', 'Iskoola Pota', 'Malithi Web', Arial, sans-serif;
-        font-size: 16px;
-        line-height: 1.5;
-        background: white;
-        color: black;
-        box-sizing: border-box;
-        font-feature-settings: 'liga', 'clig', 'kern';
-        text-rendering: optimizeLegibility;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      `
-      
-      // Create centered title and content
-      const titleElement = document.createElement('h3')
-      titleElement.style.cssText = 'text-align: center; margin-bottom: 20px; font-weight: bold; text-decoration: underline;'
-      titleElement.textContent = 'විල්බගෙදර එක්සත් අවමංගල්‍යධාර සමිතිය'
-      
-      const contentElement = document.createElement('p')
-      contentElement.style.cssText = 'text-align: justify; margin: 0; line-height: 1.6;'
-      const headingText = generateHeadingText()
-      // Remove the title from the beginning of the text since we're adding it separately
-      const contentText = headingText.replace('විල්බගෙදර එක්සත් අවමංගල්‍යධාර සමිතිය  ', '')
-      contentElement.textContent = contentText
-      
-      headingDiv.appendChild(titleElement)
-      headingDiv.appendChild(contentElement)
-      document.body.appendChild(headingDiv)
+    const input = document.getElementById("assignments-content");
+    const headingText = generateHeadingText();
 
-      // Wait a moment for fonts to load properly
-      await new Promise(resolve => setTimeout(resolve, 1000))
+    if (!input) {
+      console.error("Element with id 'assignments-content' not found.");
+      alert("PDF ජනනය කිරීමට අසමත් විය. කරුණාකර පිටුව නැවත පූරණය කර නැවත උත්සාහ කරන්න.");
+      return;
+    }
 
-      console.log("Converting heading to canvas...")
-      // Convert heading to canvas
-      const headingCanvas = await html2canvas(headingDiv, { 
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: true,
-        letterRendering: true,
-        fontEmbedCSS: true,
-        foreignObjectRendering: true
-      })
-      document.body.removeChild(headingDiv)
-      console.log("Heading canvas dimensions:", headingCanvas.width, headingCanvas.height)
+    if (cemeteryAssignments.length === 0 && funeralAssignments.length === 0) {
+      alert("පැවරීම් නොමැත. කරුණාකර පළමුව පැවරීම් ජනනය කරන්න.");
+      return;
+    }
 
-      // Convert assignments content to canvas
-      const input = document.getElementById("assignments-content")
-      if (!input) {
-        console.error("assignments-content element not found!")
-        return
+    console.log("Starting PDF generation...");
+    input.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    // Add a delay to allow for scrolling and rendering
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const originalStyles = [];
+    let current = input;
+    while (current && current !== document.body) {
+      if (current.style.overflow) {
+        originalStyles.push({ element: current, overflow: current.style.overflow });
+        current.style.overflow = "visible";
       }
-      
-      console.log("Converting assignments content to canvas...")
-      console.log("Input element:", input)
-      console.log("Input element dimensions:", input.offsetWidth, input.offsetHeight)
-      
-      const contentCanvas = await html2canvas(input, { 
-        scale: 2,
+      current = current.parentElement;
+    }
+
+    try {
+      console.log("Capturing content with html2canvas...");
+      const canvas = await html2canvas(input, {
+        scale: 3, // Increased scale for better quality
         useCORS: true,
         allowTaint: true,
-        backgroundColor: '#ffffff',
         logging: true,
-        letterRendering: true,
-        fontEmbedCSS: true,
-        foreignObjectRendering: true,
         onclone: (clonedDoc) => {
-          console.log("Document cloned for canvas generation")
-          const clonedElement = clonedDoc.getElementById("assignments-content")
+          const clonedElement = clonedDoc.getElementById("assignments-content");
           if (clonedElement) {
-            console.log("Cloned element found:", clonedElement.offsetWidth, clonedElement.offsetHeight)
-          } else {
-            console.error("Cloned element not found!")
+            clonedElement.style.transform = 'none';
+            // Find all tables within the cloned element
+            const tables = clonedElement.querySelectorAll("table");
+            tables.forEach(table => {
+              // Add margin bottom to tables
+              table.style.marginBottom = '15px';
+
+              // Increase font size and improve Sinhala rendering for all table cells
+              const allCells = table.querySelectorAll("th, td");
+              allCells.forEach(cell => {
+                cell.style.fontSize = '20px';
+                cell.style.fontFamily = "'Noto Sans Sinhala', Arial, sans-serif";
+                cell.style.fontWeight = '500';
+                cell.style.lineHeight = '1.4';
+              });
+
+              // Increase font size for member IDs
+              const memberIdCells = table.querySelectorAll("td:first-child");
+              memberIdCells.forEach(cell => {
+                cell.style.fontSize = '24px'; // Match the size of special text
+                cell.style.fontWeight = 'bold';
+              });
+
+              // Hide the column name 'Remove' while keeping the column structure
+              const removeHeaders = table.querySelectorAll("th");
+              removeHeaders.forEach(header => {
+                if (header.textContent.trim() === 'Remove') {
+                  header.style.visibility = 'hidden';
+                }
+              });
+            });
+
+            // Increase font size for headings
+            const headings = clonedElement.querySelectorAll(".MuiTypography-root");
+            headings.forEach(heading => {
+              if (heading.textContent.includes("සුසාන භුමියේ කටයුතු") || heading.textContent.includes("දේහය ගෙනයාම")) {
+                heading.style.fontSize = '24px';
+                heading.style.fontWeight = 'bold';
+              }
+            });
+
+            // Increase font size for special text
+            const specialText = clonedElement.querySelectorAll(".MuiTypography-root, p, span");
+            specialText.forEach(text => {
+              if (text.textContent.includes("විශේෂයෙන් නිදහස් කල සාමාජිකයන්") || text.textContent.includes("සුසාන භුමි වැඩ වලින් නිදහස් සාමාජිකයන්")) {
+                text.style.fontSize = '24px';
+                text.style.fontWeight = 'bold';
+              }
+            });
+
+            // Ensure proper Sinhala text rendering for all elements
+            const allText = clonedElement.querySelectorAll("p, span, div, td, th");
+            allText.forEach(element => {
+              element.style.fontFamily = "'Noto Sans Sinhala', Arial, sans-serif";
+              element.style.fontWeight = '500';
+              element.style.lineHeight = '1.4';
+            });
           }
         }
-      })
-      
-      console.log("Content canvas dimensions:", contentCanvas.width, contentCanvas.height)
+      });
 
-      // Create PDF
-      const pdf = new jsPDF("p", "mm", "a4")
-      
-      // Add heading image
-      const headingImgData = headingCanvas.toDataURL("image/png")
-      const headingWidth = 210 // A4 width
-      const headingHeight = (headingCanvas.height * headingWidth) / headingCanvas.width
-      console.log("Adding heading to PDF:", headingWidth, headingHeight)
-      pdf.addImage(headingImgData, "PNG", 0, 10, headingWidth, headingHeight)
-      
-      // Add content image
-      const contentImgData = contentCanvas.toDataURL("image/png")
-      const contentWidth = 210
-      const contentHeight = (contentCanvas.height * contentWidth) / contentCanvas.width
-      const yPosition = 10 + headingHeight + 10 // After heading + some margin
-      console.log("Adding content to PDF:", contentWidth, contentHeight, "at position:", yPosition)
-      
-      pdf.addImage(contentImgData, "PNG", 0, yPosition, contentWidth, contentHeight)
-      
-      console.log("Saving PDF...")
-      pdf.save(`assignments-${selectedDate.format("YYYY-MM-DD")}.pdf`)
-    } catch (error) {
-      console.error("Error generating PDF:", error)
-      // Fallback to simple PDF generation
-      const input = document.getElementById("assignments-content")
-      if (input) {
-        console.log("Trying fallback PDF generation...")
-        html2canvas(input, { 
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: '#ffffff',
-          logging: true,
-          letterRendering: true,
-          fontEmbedCSS: true,
-          foreignObjectRendering: true
-        }).then(canvas => {
-          console.log("Fallback canvas dimensions:", canvas.width, canvas.height)
-          const imgData = canvas.toDataURL("image/png")
-          const pdf = new jsPDF("p", "mm", "a4")
-          const imgWidth = 210
-          const imgHeight = (canvas.height * imgWidth) / canvas.width
-          pdf.addImage(imgData, "PNG", 0, 15, imgWidth, imgHeight)
-          pdf.save(`assignments-${selectedDate.format("YYYY-MM-DD")}.pdf`)
-        }).catch(fallbackError => {
-          console.error("Fallback PDF generation also failed:", fallbackError)
-        })
-      } else {
-        console.error("assignments-content element not found for fallback!")
+      console.log("Canvas created with dimensions:", canvas.width, "x", canvas.height);
+      if (canvas.width === 0 || canvas.height === 0) {
+        console.error("Canvas has zero dimensions. Aborting PDF generation.");
+        alert("PDF ජනනය කිරීමට අසමත් විය. අන්තර්ගතය දර්ශනය නොවේ.");
+        return;
       }
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const leftMargin = 20;
+      const rightMargin = 20;
+      const topMargin = 25;
+      const bottomMargin = 25;
+      const contentWidth = pdfWidth - leftMargin - rightMargin;
+
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = imgWidth / imgHeight;
+      let finalImgHeight = contentWidth / ratio;
+
+      // Create a temporary div to render the heading and convert it to a canvas
+      const headingDiv = document.createElement('div');
+      // Use justify alignment for the heading
+      headingDiv.innerHTML = `<p style="font-family: 'Noto Sans Sinhala', Arial, sans-serif; text-align: justify; padding: 0; margin: 0; line-height: 1.6;">${headingText}</p>`;
+      headingDiv.style.width = `${contentWidth}mm`;
+      headingDiv.style.position = 'absolute';
+      headingDiv.style.left = '-9999px'; // Render off-screen
+      document.body.appendChild(headingDiv);
+
+      const headingCanvas = await html2canvas(headingDiv, { scale: 2, backgroundColor: null });
+      document.body.removeChild(headingDiv);
+
+      const headingImgData = headingCanvas.toDataURL("image/png");
+      const headingImgHeight = (headingCanvas.height * contentWidth) / headingCanvas.width;
+
+      // Add heading with 25mm top margin
+      pdf.addImage(headingImgData, "PNG", leftMargin, topMargin, contentWidth, headingImgHeight);
+
+      const contentStartY = topMargin + headingImgHeight + 5; // Start content after heading with a 5mm gap
+      const availableContentHeight = pdfHeight - contentStartY - bottomMargin;
+
+      // Check if content fits on the first page
+      if (finalImgHeight <= availableContentHeight) {
+        pdf.addImage(imgData, "PNG", leftMargin, contentStartY, contentWidth, finalImgHeight);
+      } else { // Paginate if it doesn't fit
+        let position = 0;
+        const pageHeightInPixels = (availableContentHeight * imgWidth) / contentWidth;
+
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = imgWidth;
+        tempCanvas.height = pageHeightInPixels;
+
+        let yPosOnPdf = contentStartY;
+        let remainingHeight = imgHeight;
+
+        while (remainingHeight > 0) {
+          const sliceHeight = Math.min(pageHeightInPixels, remainingHeight);
+          tempCanvas.height = sliceHeight;
+
+          tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+          tempCtx.drawImage(canvas, 0, position, imgWidth, sliceHeight, 0, 0, tempCanvas.width, tempCanvas.height);
+
+          const pageData = tempCanvas.toDataURL("image/png");
+          const sliceImgHeightOnPdf = (sliceHeight * contentWidth) / imgWidth;
+
+          if (yPosOnPdf + sliceImgHeightOnPdf > pdfHeight - bottomMargin) {
+             pdf.addPage();
+             yPosOnPdf = topMargin; // New page starts with 25mm top margin
+          }
+
+          pdf.addImage(pageData, "PNG", leftMargin, yPosOnPdf, contentWidth, sliceImgHeightOnPdf);
+
+          position += sliceHeight;
+          remainingHeight -= sliceHeight;
+          yPosOnPdf += sliceImgHeightOnPdf + 5; // Add a small gap
+        }
+      }
+
+      pdf.save(`assignments-${selectedDate.format("YYYY-MM-DD")}.pdf`);
+      console.log("PDF saved successfully.");
+
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("PDF ජනනය කිරීමේදී දෝෂයක් ඇති විය. වැඩි විස්තර සඳහා කරුණාකර console බලන්න.");
+    } finally {
+      // Restore original styles
+      originalStyles.forEach(({ element, overflow }) => {
+        element.style.overflow = overflow;
+      });
+      console.log("Original styles restored.");
     }
   }
   return (
@@ -1006,7 +1071,15 @@ export default function Assignment() {
           )}
         </Box>
         <hr />
-        {selectedDeceased && (
+        {/* Debug info */}
+        {!selectedDeceased && !selectedFuneralId && cemeteryAssignments.length === 0 && (
+          <Box sx={{ p: 2, bgcolor: '#fff3cd', borderRadius: 1, mb: 2 }}>
+            <Typography color="warning">
+              අවමංගල්‍ය උත්සවයක් තෝරන්න හෝ සාමාජික විස්තර පුරවන්න
+            </Typography>
+          </Box>
+        )}
+        {(selectedDeceased || (selectedFuneralId && (cemeteryAssignments.length > 0 || funeralAssignments.length > 0)) || (member.name && (cemeteryAssignments.length > 0 || funeralAssignments.length > 0))) && (
           <Box>
             {/* Heading Preview */}
             <Box sx={{ mb: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 1, border: '1px solid #ddd' }}>
@@ -1030,36 +1103,37 @@ export default function Assignment() {
               <Box
                 sx={{
                   display: "flex",
-                  gap: "20px",
+                  gap: "10px", // Reduced gap to increase horizontal space
                   alignItems: "stretch",
-                  justifyContent: "space-between",
+                  justifyContent: "space-evenly", // Changed to evenly distribute space
                   border: "1px solid #000",
                   margin: "0 auto",
-                  maxWidth: "90%",
-                  width: "fit-content",
+                  maxWidth: "95%", // Increased max width to utilize more horizontal space
+                  width: "100%", // Ensure full width usage
                 }}
               >
-                <Box sx={{ width: "50%", border: "1px solid #000" }}>
+                <Box sx={{ width: "48%", border: "1px solid #000" }}> {/* Adjusted width to 48% */}
                   <Typography
                     sx={{
                       textAlign: "center",
-                      // mb: 2,
                       border: "1px solid #000",
                       mb: 0,
                     }}
                   >
                     සුසාන භුමියේ කටයුතු
                   </Typography>
-                  <Box sx={{ 
-                    '& .MuiTableRow-root': { 
-                      height: '40px !important',
-                      minHeight: '40px !important' 
-                    },
-                    '& .MuiTableCell-root': {
-                      padding: '4px 8px !important',
-                      verticalAlign: 'middle'
-                    }
-                  }}>
+                  <Box
+                    sx={{
+                      '& .MuiTableRow-root': {
+                        height: '40px !important',
+                        minHeight: '40px !important'
+                      },
+                      '& .MuiTableCell-root': {
+                        padding: '4px 8px !important',
+                        verticalAlign: 'middle'
+                      }
+                    }}
+                  >
                     <StickyHeadTable
                       columnsArray={columnsArray}
                       dataArray={formatDataForTable(
@@ -1075,11 +1149,10 @@ export default function Assignment() {
                     />
                   </Box>
                 </Box>
-                <Box sx={{ width: "50%", border: "1px solid #000" }}>
+                <Box sx={{ width: "48%", border: "1px solid #000" }}> {/* Adjusted width to 48% */}
                   <Typography
                     sx={{
                       textAlign: "center",
-                      // mb: 2,
                       border: "1px solid #000",
                       mb: 0,
                     }}
@@ -1087,16 +1160,18 @@ export default function Assignment() {
                     දේහය ගෙනයාම
                   </Typography>
 
-                  <Box sx={{ 
-                    '& .MuiTableRow-root': { 
-                      height: '40px !important',
-                      minHeight: '40px !important' 
-                    },
-                    '& .MuiTableCell-root': {
-                      padding: '4px 8px !important',
-                      verticalAlign: 'middle'
-                    }
-                  }}>
+                  <Box
+                    sx={{
+                      '& .MuiTableRow-root': {
+                        height: '40px !important',
+                        minHeight: '40px !important'
+                      },
+                      '& .MuiTableCell-root': {
+                        padding: '4px 8px !important',
+                        verticalAlign: 'middle'
+                      }
+                    }}
+                  >
                     <StickyHeadTable
                       columnsArray={columnsArray}
                       dataArray={formatDataForTable(funeralAssignments, "parade")}
@@ -1127,11 +1202,25 @@ export default function Assignment() {
                     සුසාන භුමි වැඩ වලින් නිදහස් සාමාජිකයන් : -{" "}
                   </Typography>
                   <Box sx={{ display: "flex" }}>
-                    {releasedMembers.map((val, key) => {
-                      return (
-                        <Typography key={key}>{val.member_id}, </Typography>
-                      )
-                    })}
+                    {releasedMembers
+                      .filter(val => {
+                        // Only show released members if they are within the assignment range
+                        if (cemeteryAssignments.length === 0 && funeralAssignments.length === 0) {
+                          return false
+                        }
+                        const allAssignedIds = [
+                          ...cemeteryAssignments.map(m => m.member_id),
+                          ...funeralAssignments.map(m => m.member_id)
+                        ]
+                        const minId = Math.min(...allAssignedIds)
+                        const maxId = Math.max(...allAssignedIds)
+                        return val.member_id >= minId && val.member_id <= maxId
+                      })
+                      .map((val, key) => {
+                        return (
+                          <Typography key={key}>{val.member_id}, </Typography>
+                        )
+                      })}
                   </Box>
                 </Box>
               </Box>
