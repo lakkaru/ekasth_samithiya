@@ -733,6 +733,37 @@ export default function MonthlyReport() {
                   )}
                 </Box>
 
+                {/* Starting Balances - Only show for new reports or regenerated reports with data */}
+                {!reportData.isSavedReport && (
+                  <>
+                    <Typography variant="h5" sx={{ marginBottom: "15px", marginTop: "20px", color: "#1976d2" }}>
+                      කාල සීමාව ආරම්භයේ ශේෂ
+                    </Typography>
+                    <Grid2 container spacing={3} sx={{ marginBottom: "30px" }}>
+                      <Grid2 size={{ xs: 12, sm: 6 }}>
+                        <Card sx={{ bgcolor: "#fff3e0", border: "2px solid #f57c00" }}>
+                          <CardContent>
+                            <Typography variant="h6" color="#f57c00">ආරම්භක අත ඉතිරි මුදල</Typography>
+                            <Typography variant="h4" sx={{ fontWeight: "bold", color: "#f57c00" }}>
+                              {formatCurrency(reportData.totals.periodStartCashOnHand)}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid2>
+                      <Grid2 size={{ xs: 12, sm: 6 }}>
+                        <Card sx={{ bgcolor: "#f3e5f5", border: "2px solid #7b1fa2" }}>
+                          <CardContent>
+                            <Typography variant="h6" color="#7b1fa2">ආරම්භක බැංකු ශේෂය</Typography>
+                            <Typography variant="h4" sx={{ fontWeight: "bold", color: "#7b1fa2" }}>
+                              {formatCurrency(reportData.totals.periodStartBankDeposit)}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid2>
+                    </Grid2>
+                  </>
+                )}
+
                 {/* Summary Cards */}
                 <Grid2 container spacing={3} sx={{ marginBottom: "30px" }}>
                   <Grid2 size={{ xs: 12, sm: 6, md: 4 }}>

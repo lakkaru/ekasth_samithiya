@@ -99,11 +99,19 @@ const getIncomes = async (req, res) => {
     
     let dateFilter = {}
     
-    // Date range filter
+    // Date range filter - consider only date, not time
     if (startDate && endDate) {
+      // Set startDate to beginning of day (00:00:00)
+      const start = new Date(startDate)
+      start.setHours(0, 0, 0, 0)
+      
+      // Set endDate to end of day (23:59:59.999)
+      const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999)
+      
       dateFilter.date = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate)
+        $gte: start,
+        $lte: end
       }
     }
 

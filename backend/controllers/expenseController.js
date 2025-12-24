@@ -126,10 +126,16 @@ exports.getExpenses = async (req, res) => {
     if (startDate || endDate) {
       filter.date = {};
       if (startDate) {
-        filter.date.$gte = new Date(startDate);
+        // Set to beginning of day (00:00:00)
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        filter.date.$gte = start;
       }
       if (endDate) {
-        filter.date.$lte = new Date(endDate);
+        // Set to end of day (23:59:59.999)
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        filter.date.$lte = end;
       }
     }
 
@@ -183,10 +189,16 @@ exports.getExpenseSummary = async (req, res) => {
     if (startDate || endDate) {
       filter.date = {};
       if (startDate) {
-        filter.date.$gte = new Date(startDate);
+        // Set to beginning of day (00:00:00)
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        filter.date.$gte = start;
       }
       if (endDate) {
-        filter.date.$lte = new Date(endDate);
+        // Set to end of day (23:59:59.999)
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        filter.date.$lte = end;
       }
     }
 
@@ -404,10 +416,16 @@ exports.getAllExpenses = async (req, res) => {
     if (startDate || endDate) {
       filter.date = {};
       if (startDate) {
-        filter.date.$gte = new Date(startDate);
+        // Set to beginning of day (00:00:00)
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        filter.date.$gte = start;
       }
       if (endDate) {
-        filter.date.$lte = new Date(endDate);
+        // Set to end of day (23:59:59.999)
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        filter.date.$lte = end;
       }
     }
 
