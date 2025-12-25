@@ -56,7 +56,8 @@ exports.login = async (req, res) => {
         userType: userType, // To distinguish between admin and member
     };
 
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" });
+    // Set token to expire in 365 days (effectively keeping user logged in until explicit logout)
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "365d" });
 
     res.status(200).json({
       message: "Login successful",
