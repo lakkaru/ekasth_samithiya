@@ -119,10 +119,10 @@ exports.createReceipts = async (req, res) => {
       });
       savedFinePayment = await newFinePayment.save();
 
-      // Update member's previousDue
+      // Update member's due2023
       // const member = await Member.findById(member_Id);
       // if (member) {
-      //   member.previousDue -= finePayment;
+      //   member.due2023 -= finePayment;
       //   await member.save();
       // }
     }
@@ -149,7 +149,7 @@ exports.deleteReceipt = async (req, res) => {
     const startDate = new Date(queryDate.setHours(0, 0, 0, 0));
     const endDate = new Date(queryDate.setHours(23, 59, 59, 999));
 
-    // First, get the fine payments to calculate total for previousDue update
+    // First, get the fine payments to calculate total for due2023 update
     const finePaymentsToDelete = await FinePayment.find({
       memberId: memberId,
       date: { $gte: startDate, $lte: endDate }
@@ -169,11 +169,11 @@ exports.deleteReceipt = async (req, res) => {
       })
     ]);
 
-    // If fine payments were deleted, update member's previousDue
+    // If fine payments were deleted, update member's due2023
     if (totalFineDeleted > 0) {
       const member = await Member.findById(memberId);
       if (member) {
-        member.previousDue += totalFineDeleted;
+        member.due2023 += totalFineDeleted;
         await member.save();
       }
     }

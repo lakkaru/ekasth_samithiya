@@ -88,7 +88,7 @@ const MemberSchema = new Schema(
       type: String,
       default: "regular", // regular or other statuses like 'inactive', etc.
     },
-    previousDue: {
+    due2023: {
       type: Number,
       default: 0,
     },
