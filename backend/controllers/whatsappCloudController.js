@@ -115,7 +115,7 @@ async function buildBalanceText(member) {
   const totalFinePaid = finePayments.reduce((s, p) => s + (p.amount || 0), 0);
   const fineDue = fineTotal - totalFinePaid;
 
-  const previousDueVal = member.previousDue || 0;
+  const due2023Val = member.due2023 || 0;
   
   // Get loan installment if applicable
   const loan = await Loan.findOne({
@@ -142,16 +142,16 @@ async function buildBalanceText(member) {
     }
   }
 
-  const dueWithoutLoan = membershipDue + fineDue + previousDueVal;
+  const dueWithoutLoan = membershipDue + fineDue + due2023Val;
   const totalOutstanding = dueWithoutLoan + loanInstallment;
 
   // Dynamic label for previous due
-  const prevDueLabel = previousDueVal < 0 ? `${prevYear} ඉතිරිය` : `${prevYear} හිඟ`;
+  const prevDueLabel = due2023Val < 0 ? `${prevYear} ඉතිරිය` : `${prevYear} හිඟ`;
 
   // Dynamic label for Due without loan
   const dueLabel = dueWithoutLoan < 0 ? 'මුදල් ඉතිරිය' : 'මුදල් හිඟ';
 
-  let message = `👤 ${member.name}\n🆔 සා.අංකය: ${member.member_id}\n\n=== 💰 මුදල් තත්ත්වය ===\n\n💳 සාමාජිකත්ව හිඟ: ${formatCurrency(membershipDue)}\n⚠️ දඩ හිඟ: ${formatCurrency(fineDue)}\n📅 ${prevDueLabel}: ${formatCurrency(previousDueVal)}\n\n━━━━━━━━━━━━━━━\n💵 ${dueLabel}: ${formatCurrency(dueWithoutLoan)}`;
+  let message = `👤 ${member.name}\n🆔 සා.අංකය: ${member.member_id}\n\n=== 💰 මුදල් තත්ත්වය ===\n\n💳 සාමාජිකත්ව හිඟ: ${formatCurrency(membershipDue)}\n⚠️ දඩ හිඟ: ${formatCurrency(fineDue)}\n📅 ${prevDueLabel}: ${formatCurrency(due2023Val)}\n\n━━━━━━━━━━━━━━━\n💵 ${dueLabel}: ${formatCurrency(dueWithoutLoan)}`;
   
   if (loanInstallment > 0) {
     message += `\n🏦 ණය වාරිකය: ${formatCurrency(loanInstallment)}`;

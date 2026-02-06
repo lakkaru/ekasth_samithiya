@@ -25,7 +25,7 @@ async function getMembershipDetails(member_id) {
   const member = await Member.findOne({ member_id: member_id })
     .populate("dependents", "name relationship dateOfDeath") // Populate dependents with necessary fields
     .select(
-      "_id member_id name dateOfDeath dependents area status siblingsCount previousDue deactivated_at"
+      "_id member_id name dateOfDeath dependents area status siblingsCount due2023 deactivated_at"
     );
 
   if (!member) {
@@ -930,7 +930,7 @@ exports.getMember = async (req, res) => {
       mobile: member.mobile,
       whatsApp: member.whatsApp,
       email: member.email,
-      previousDue: member.previousDue,
+      due2023: member.due2023,
       meetingAbsents: member.meetingAbsents,
       dependents: member.dependents.map((dependent) => dependent),
       fineTotal, // Use the calculated fineTotal
@@ -1262,7 +1262,7 @@ exports.getMemberDueById = async (req, res) => {
 
     // Find member by ID
     const member = await Member.findOne({ member_id: member_id }).select(
-      "_id member_id name previousDue fines siblingsCount"
+      "_id member_id name due2023 fines siblingsCount"
     );
     if (!member) {
       return res.status(404).json({ error: "Member not found." });
@@ -1274,7 +1274,7 @@ exports.getMemberDueById = async (req, res) => {
       0
     );
     //getting total of fins and previous dues
-    const due = fineTotal + member.previousDue;
+    const due = fineTotal + member.due2023;
     const finePayments = await FinePayment.find({
       memberId: member._id,
       date: { $gt: new Date("2024-12-31T23:59:59.999Z") },
@@ -1653,24 +1653,24 @@ exports.getMemberAllInfoById = async (req, res) => {
     if (exclude_loan_installment === 'true') {
       // For guarantors: include loan installments only if there are unpaid months
       totalDue = hasUnpaidLoanMonths && loanInfo?.calculatedInterest?.installment
-        ? member.previousDue +
+        ? member.due2023 +
         finesTotal -
         finesTotalPayments +
         currentMembershipDue +
         loanInfo.calculatedInterest.installment
-        : member.previousDue +
+        : member.due2023 +
         finesTotal -
         finesTotalPayments +
         currentMembershipDue;
     } else {
       // For loan borrowers: include loan installments only if there are unpaid months
       totalDue = hasUnpaidLoanMonths && loanInfo?.calculatedInterest?.installment
-        ? member.previousDue +
+        ? member.due2023 +
         finesTotal -
         finesTotalPayments +
         currentMembershipDue +
         loanInfo.calculatedInterest.installment
-        : member.previousDue +
+        : member.due2023 +
         finesTotal -
         finesTotalPayments +
         currentMembershipDue;
@@ -1853,7 +1853,7 @@ exports.getDueForMeetingSign = async (req, res) => {
       status: { $ne: "free" }, // Exclude members with status 'free'
       deactivated_at: null, // Exclude deactivated members
     })
-      .select("_id member_id name previousDue fines")
+      .select("_id member_id name due2023 fines")
       .sort("member_id");
 
     // Get membership payments for the current year
@@ -1917,13 +1917,13 @@ exports.getDueForMeetingSign = async (req, res) => {
       const fineTotalPaid = finePaymentMap.get(member._id.toString()) || 0;
 
       const totalDue =
-        membershipDue + member.previousDue + totalFines - fineTotalPaid;
+        membershipDue + member.due2023 + totalFines - fineTotalPaid;
 
       return {
         member_id: member.member_id,
         // name: member.name,
         // membershipDue: membershipDue < 0 ? 0 : membershipDue,
-        // previousDue: member.previousDue,
+        // due2023: member.due2023,
         // totalFines: totalFines,
         totalDue: totalDue, // Total amount due
       };
@@ -2094,7 +2094,7 @@ exports.createMember = async (req, res) => {
       siblingsCount: siblingsCount || 0,
       status: status || "regular",
       roles: ["member"], // Default role
-      previousDue: 0, // Default previous due
+      due2023: 0, // Default previous due
       meetingAbsents: 0, // Default meeting absents
       fines: [], // Default empty fines array
       password: birthYear, // Set password to birth year if available, otherwise member_id
@@ -2900,7 +2900,7 @@ exports.getAllMembersDue = async (req, res) => {
         // Fetch all active members (not deactivated)
         const activeMembers = await Member.find({
             deactivated_at: null
-        }).sort({ member_id: 1 }).select('member_id name siblingsCount previousDue fines');
+        }).sort({ member_id: 1 }).select('member_id name siblingsCount due2023 fines');
 
         // Calculate due for each member
         const membersWithDue = await Promise.all(
@@ -2954,8 +2954,8 @@ exports.getAllMembersDue = async (req, res) => {
                 }
 
                 // Add previous due
-                const previousDueVal = member.previousDue || 0;
-                const dueWithoutLoan = membershipDue + fineDue + previousDueVal;
+                const due2023Val = member.due2023 || 0;
+                const dueWithoutLoan = membershipDue + fineDue + due2023Val;
                 const totalOutstanding = dueWithoutLoan + loanInstallment;
 
                 return {

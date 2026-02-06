@@ -322,8 +322,8 @@ export default function FullDetails() {
       {/* Account Summary */}
       <Paper elevation={2} sx={{ p: { xs: 2, sm: 3 }, mb: 3, bgcolor: '#e3f2fd' }}>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-          <Typography sx={{ fontWeight: 800, fontSize: { xs: '.8rem', sm: '1.1rem' }, color: member.memberDetails?.previousDue < 0 ? 'green' : 'orange' }}>
-            {member.memberDetails?.previousDue < 0 ? `2024 ඉතිරිය රු. ${Math.abs(member.memberDetails.previousDue)}` : `2024 හිඟ රු. ${Math.abs(member.memberDetails?.previousDue || 0)}`}
+          <Typography sx={{ fontWeight: 800, fontSize: { xs: '.8rem', sm: '1.1rem' }, color: member.memberDetails?.due2023 < 0 ? 'green' : 'orange' }}>
+            {member.memberDetails?.due2023 < 0 ? `2024 ඉතිරිය රු. ${Math.abs(member.memberDetails.due2023)}` : `2024 හිඟ රු. ${Math.abs(member.memberDetails?.due2023 || 0)}`}
           </Typography>
           <Typography sx={{ fontWeight: 800, fontSize: { xs: '.8rem', sm: '1.1rem' }, color: member.currentMembershipDue < 0 ? 'green' : 'orange' }}>
             {member.currentMembershipDue < 0 ? `සාමාජික මුදල් ඉතිරිය රු. ${Math.abs(member.currentMembershipDue)}` : `සාමාජික මුදල් හිඟ රු. ${Math.abs(member.currentMembershipDue || 0)}`}

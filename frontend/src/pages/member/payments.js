@@ -49,8 +49,8 @@ export default function Payments() {
   //   const dueResponse = await Axios.get(
   //     `http://127.0.0.1:3001/api/getAllDueById?member_id=${memberId}`
   //   )
-  //   const previousDue = dueResponse.data.due.previousDue
-  //   setPerviousDue(previousDue.totalDue) // Set the previous due
+  //   const due2023 = dueResponse.data.due.due2023
+  //   setPerviousDue(due2023.totalDue) // Set the previous due
   //   // fines = dueResponse.data.due.fines
   //   // console.log("Previous Due:", fines)
 
@@ -162,10 +162,10 @@ export default function Payments() {
 
     fetchPayments()
   }, [memberData]) // Add memberData as dependency
-  // console.log(memberInfo?.previousDue?.totalDue<0).
+  // console.log(memberInfo?.due2023?.totalDue<0).
   const membershipDue = memberInfo?.membershipDue
   const totalDue =
-    memberInfo?.previousDue +
+    memberInfo?.due2023 +
       memberInfo?.membershipDue +
       memberInfo?.fineDue || "0"
 
@@ -255,28 +255,28 @@ export default function Payments() {
               elevation={3}
               sx={{ 
                 height: "100%",
-                background: memberInfo?.previousDue < 0 
+                background: memberInfo?.due2023 < 0 
                   ? "linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)"
                   : "linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%)",
-                border: `2px solid ${memberInfo?.previousDue < 0 ? "#4caf50" : "#ff9800"}`,
+                border: `2px solid ${memberInfo?.due2023 < 0 ? "#4caf50" : "#ff9800"}`,
                 borderRadius: "12px"
               }}
             >
               <CardContent sx={{ textAlign: "center", padding: "24px" }}>
                 <Box sx={{ display: "flex", justifyContent: "center", marginBottom: "12px" }}>
-                  {getStatusIcon(memberInfo?.previousDue)}
+                  {getStatusIcon(memberInfo?.due2023)}
                 </Box>
                 <Typography variant="h6" sx={{ fontWeight: "bold", marginBottom: "8px" }}>
                   පැරණි ශේෂය
                 </Typography>
                 <Chip
-                  label={memberInfo?.previousDue < 0 ? "ඉතිරිය" : "හිඟය"}
-                  color={getStatusColor(memberInfo?.previousDue)}
+                  label={memberInfo?.due2023 < 0 ? "ඉතිරිය" : "හිඟය"}
+                  color={getStatusColor(memberInfo?.due2023)}
                   size="small"
                   sx={{ marginBottom: "8px" }}
                 />
                 <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-                  {formatCurrency(memberInfo?.previousDue)}
+                  {formatCurrency(memberInfo?.due2023)}
                 </Typography>
               </CardContent>
             </Card>

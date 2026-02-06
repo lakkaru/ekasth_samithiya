@@ -98,7 +98,7 @@ const MemberHomePage = () => {
   const calculateTotalDue = () => {
     return (memberData?.membershipDue || 0) + 
            (memberData?.fineDue || 0) + 
-           (memberData?.previousDue || 0)
+           (memberData?.due2023 || 0)
   }
   if (loading) {
     return (
@@ -179,28 +179,28 @@ const MemberHomePage = () => {
               elevation={3}
               sx={{ 
                 height: "100%",
-                background: memberData?.previousDue < 0 
+                background: memberData?.due2023 < 0 
                   ? "linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)"
                   : "linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%)",
-                border: `2px solid ${memberData?.previousDue < 0 ? "#4caf50" : "#ff9800"}`,
+                border: `2px solid ${memberData?.due2023 < 0 ? "#4caf50" : "#ff9800"}`,
                 borderRadius: "12px"
               }}
             >
               <CardContent sx={{ textAlign: "center", padding: "24px" }}>
                 <Box sx={{ display: "flex", justifyContent: "center", marginBottom: "12px" }}>
-                  {getStatusIcon(memberData?.previousDue)}
+                  {getStatusIcon(memberData?.due2023)}
                 </Box>
                 <Typography variant="h6" sx={{ fontWeight: "bold", marginBottom: "8px" }}>
                   පසුගිය වසර
                 </Typography>
                 <Chip
-                  label={memberData?.previousDue < 0 ? "ඉතිරිය" : "හිඟය"}
-                  color={getStatusColor(memberData?.previousDue)}
+                  label={memberData?.due2023 < 0 ? "ඉතිරිය" : "හිඟය"}
+                  color={getStatusColor(memberData?.due2023)}
                   size="small"
                   sx={{ marginBottom: "8px" }}
                 />
                 <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-                  {formatCurrency(memberData?.previousDue)}
+                  {formatCurrency(memberData?.due2023)}
                 </Typography>
               </CardContent>
             </Card>
