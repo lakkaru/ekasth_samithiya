@@ -43,6 +43,8 @@ export default function Assignment() {
   const [cemeteryAssignments, setCemeteryAssignments] = useState([])
   const [funeralAssignments, setFuneralAssignments] = useState([])
   const [allMembers, setAllMembers] = useState([])
+  const [eligibleMembersPool, setEligibleMembersPool] = useState([]) // Full pool of eligible members
+  const [nextMemberIndex, setNextMemberIndex] = useState(0) // Track position in circular array
   // const [dependents, setDependents] = useState([])
   const [member, setMember] = useState({})
   const [deceasedOptions, setDeceasedOptions] = useState([])
@@ -285,16 +287,6 @@ export default function Assignment() {
     }
 
     const fetchData = async () => {
-      // Only generate new assignments if we don't already have them loaded from an existing funeral
-      // This allows generating assignments for newly selected funerals or when member.area changes
-      const hasLoadedAssignments = useExistingFuneral && 
-                                   (cemeteryAssignments.length > 0 || funeralAssignments.length > 0);
-      
-      if (hasLoadedAssignments) {
-        console.log("Using existing funeral assignments - already loaded")
-        return
-      }
-
       try {
         let lastAssignedMember_id = 0
         let lastRemovedMember_ids = []
@@ -377,64 +369,168 @@ export default function Assignment() {
         }
 
         const filterMembers = () => {
-          // Filter members beyond the last assigned member
-          // and adding last removed members
-
-          const nextMembers = allMembers.filter(
-            member =>
-              member.member_id > lastAssignedMember_id ||
-              lastRemovedMember_ids.includes(member.member_id)
-          )
-          // console.log('nextMembers: ',nextMembers)
-
-          // Members who are not free or convenient
-          const activeMembers = nextMembers.filter(
+          // First, filter ALL active members
+          const activeMembers = allMembers.filter(
             member =>
               member.status !== "free" &&
               member.status !== "funeral-free" &&
               member.status !== "attendance-free"
           )
-          // console.log('activeMembers: ',activeMembers)
-          //removing admins
-          // console.log('allAdmins: ',allAdmins)
+          
+          // Remove admins
           const membersWithoutAdmins = activeMembers.filter(
             member => !allAdmins.includes(member.member_id)
           )
           
           // Remove speaker-handlers from funeral assignments
-          const filteredMembers = membersWithoutAdmins.filter(
+          const eligibleMembers = membersWithoutAdmins.filter(
             member => !member.roles || !member.roles.includes("speaker-handler")
           )
-          // console.log("lastRemovedMember_ids", lastRemovedMember_ids)
+          
+          if (eligibleMembers.length === 0) {
+            // Only clear assignments if not using existing funeral
+            const hasLoadedAssignments = useExistingFuneral && 
+                                       (cemeteryAssignments.length > 0 || funeralAssignments.length > 0);
+            if (!hasLoadedAssignments) {
+              setAllMembers([])
+              setCemeteryAssignments([])
+              setFuneralAssignments([])
+              setReleasedMembers([])
+            }
+            setEligibleMembersPool([])
+            setNextMemberIndex(0)
+            return
+          }
 
-          // console.log('filteredMembers: ',filteredMembers)
-          setAllMembers(filteredMembers)
-          setCemeteryAssignments(filteredMembers.slice(0, 15)) // Assign first 15 to cemetery
-          setFuneralAssignments(filteredMembers.slice(15, 30)) // Assign next 15 to funeral
+          // Always store the full eligible members pool (needed for remove functionality)
+          setEligibleMembersPool(eligibleMembers)
 
-          // Separate out 'free' or 'convenient' members
-          // Check if we have enough members before accessing index 30
-          if (filteredMembers.length > 30) {
-            const releasedMembers = nextMembers.filter(
-              member =>
-                member.member_id <= filteredMembers[30].member_id &&
-                (member.status === "free" ||
-                  member.status === "funeral-free" ||
-                  member.status === "attendance-free")
+          // Only generate new assignments if we don't already have them loaded from an existing funeral
+          const hasLoadedAssignments = useExistingFuneral && 
+                                       (cemeteryAssignments.length > 0 || funeralAssignments.length > 0);
+          
+          if (hasLoadedAssignments) {
+            console.log("Using existing funeral assignments - already loaded, pool populated for remove functionality")
+            // Still set nextMemberIndex to support removing members
+            // Find the highest member_id in current assignments to set next index
+            const allAssignedIds = [
+              ...cemeteryAssignments.map(m => m.member_id),
+              ...funeralAssignments.map(m => m.member_id)
+            ]
+            const maxAssignedId = Math.max(...allAssignedIds)
+            const maxIndex = eligibleMembers.findIndex(m => m.member_id > maxAssignedId)
+            setNextMemberIndex(maxIndex !== -1 ? maxIndex : 0)
+            
+            // Calculate released members for existing funeral based on assigned member ID range
+            if (cemeteryAssignments.length > 0 || funeralAssignments.length > 0) {
+              const minMemberId = Math.min(...allAssignedIds)
+              const maxMemberId = Math.max(...allAssignedIds)
+              
+              const releasedMembers = allMembers.filter(
+                member =>
+                  member.member_id >= minMemberId &&
+                  member.member_id <= maxMemberId &&
+                  (member.status === "free" ||
+                    member.status === "funeral-free" ||
+                    member.status === "attendance-free")
+              )
+              setReleasedMembers(releasedMembers)
+            }
+            return
+          }
+
+          // For new assignments: include members beyond last assigned OR members who were removed from last funeral
+          const candidateMembers = eligibleMembers.filter(
+            member =>
+              member.member_id > lastAssignedMember_id ||
+              lastRemovedMember_ids.includes(member.member_id)
+          )
+
+          if (candidateMembers.length === 0) {
+            // If no candidates, start from beginning
+            const assignedMembers = eligibleMembers.slice(0, 40)
+            setAllMembers(assignedMembers)
+            setCemeteryAssignments(assignedMembers.slice(0, 20))
+            setFuneralAssignments(assignedMembers.slice(20, 40))
+            setNextMemberIndex(40 % eligibleMembers.length)
+            
+            if (assignedMembers.length > 0) {
+              const minMemberId = Math.min(...assignedMembers.map(m => m.member_id))
+              const maxMemberId = Math.max(...assignedMembers.map(m => m.member_id))
+              const releasedMembers = allMembers.filter(
+                member =>
+                  member.member_id >= minMemberId &&
+                  member.member_id <= maxMemberId &&
+                  (member.status === "free" ||
+                    member.status === "funeral-free" ||
+                    member.status === "attendance-free")
+              )
+              setReleasedMembers(releasedMembers)
+            } else {
+              setReleasedMembers([])
+            }
+            return
+          }
+
+          // Find starting index - prioritize removed members from last funeral first
+          let startIndex = 0
+          if (lastRemovedMember_ids.length > 0) {
+            // Start with the first removed member or first member after last assigned, whichever comes first
+            const firstRemovedIndex = candidateMembers.findIndex(
+              m => lastRemovedMember_ids.includes(m.member_id)
             )
-            setReleasedMembers(releasedMembers)
-          } else {
-            // If we don't have 30+ members, include all free/convenient members up to what we have
-            const maxMemberId = filteredMembers.length > 0 ? 
-              Math.max(...filteredMembers.map(m => m.member_id)) : 0
-            const releasedMembers = nextMembers.filter(
+            const firstAfterLastIndex = candidateMembers.findIndex(
+              m => m.member_id > lastAssignedMember_id
+            )
+            
+            if (firstRemovedIndex !== -1 && firstAfterLastIndex !== -1) {
+              startIndex = Math.min(firstRemovedIndex, firstAfterLastIndex)
+            } else if (firstRemovedIndex !== -1) {
+              startIndex = firstRemovedIndex
+            } else if (firstAfterLastIndex !== -1) {
+              startIndex = firstAfterLastIndex
+            }
+          } else if (lastAssignedMember_id > 0) {
+            // Find the index of the member right after the last assigned
+            startIndex = candidateMembers.findIndex(
+              member => member.member_id > lastAssignedMember_id
+            )
+            if (startIndex === -1) startIndex = 0
+          }
+
+          // Create a circular array to get 40 members from candidates, wrapping if needed
+          const assignedMembers = []
+          const membersNeeded = 40
+          
+          for (let i = 0; i < membersNeeded && candidateMembers.length > 0; i++) {
+            const index = (startIndex + i) % candidateMembers.length
+            assignedMembers.push(candidateMembers[index])
+          }
+
+          // Set the next index for when members are removed
+          setNextMemberIndex((startIndex + membersNeeded) % eligibleMembers.length)
+
+          // console.log('assignedMembers: ', assignedMembers)
+          setAllMembers(assignedMembers)
+          setCemeteryAssignments(assignedMembers.slice(0, 20)) // Assign first 20 to cemetery
+          setFuneralAssignments(assignedMembers.slice(20, 40)) // Assign next 20 to funeral
+
+          // Separate out 'free' or 'convenient' members within the assignment range
+          if (assignedMembers.length > 0) {
+            const minMemberId = Math.min(...assignedMembers.map(m => m.member_id))
+            const maxMemberId = Math.max(...assignedMembers.map(m => m.member_id))
+            
+            const releasedMembers = allMembers.filter(
               member =>
+                member.member_id >= minMemberId &&
                 member.member_id <= maxMemberId &&
                 (member.status === "free" ||
                   member.status === "funeral-free" ||
                   member.status === "attendance-free")
             )
             setReleasedMembers(releasedMembers)
+          } else {
+            setReleasedMembers([])
           }
           // console.log('releasedMembers: ', releasedMembers)
         }
@@ -586,12 +682,30 @@ export default function Assignment() {
   }
 
   const getNextMember = () => {
-    return allMembers.find(
-      member =>
-        !cemeteryAssignments.includes(member) &&
-        !funeralAssignments.includes(member) &&
-        !removedMembers.includes(member)
-    )
+    if (eligibleMembersPool.length === 0) return null
+    
+    // Find a member from the pool that's not already assigned or removed
+    let attempts = 0
+    let currentIndex = nextMemberIndex
+    
+    while (attempts < eligibleMembersPool.length) {
+      const candidate = eligibleMembersPool[currentIndex]
+      const isAlreadyAssigned = 
+        cemeteryAssignments.some(m => m._id === candidate._id) ||
+        funeralAssignments.some(m => m._id === candidate._id) ||
+        removedMembers.some(m => m._id === candidate._id)
+      
+      if (!isAlreadyAssigned) {
+        // Update the index for next time
+        setNextMemberIndex((currentIndex + 1) % eligibleMembersPool.length)
+        return candidate
+      }
+      
+      currentIndex = (currentIndex + 1) % eligibleMembersPool.length
+      attempts++
+    }
+    
+    return null // All members are already assigned or removed
   }
 
   const handleRemoveMember = (type, index) => {
@@ -1142,7 +1256,7 @@ export default function Assignment() {
                       )}
                       headingAlignment="center"
                       dataAlignment="left"
-                      firstPage={15}
+                      firstPage={20}
                       totalRow={false}
                       hidePagination={true}
                       borders={true}
@@ -1177,7 +1291,7 @@ export default function Assignment() {
                       dataArray={formatDataForTable(funeralAssignments, "parade")}
                       headingAlignment="center"
                       dataAlignment="left"
-                      firstPage={15}
+                      firstPage={20}
                       totalRow={false}
                       hidePagination={true}
                       borders={true}
@@ -1202,25 +1316,11 @@ export default function Assignment() {
                     සුසාන භුමි වැඩ වලින් නිදහස් සාමාජිකයන් : -{" "}
                   </Typography>
                   <Box sx={{ display: "flex" }}>
-                    {releasedMembers
-                      .filter(val => {
-                        // Only show released members if they are within the assignment range
-                        if (cemeteryAssignments.length === 0 && funeralAssignments.length === 0) {
-                          return false
-                        }
-                        const allAssignedIds = [
-                          ...cemeteryAssignments.map(m => m.member_id),
-                          ...funeralAssignments.map(m => m.member_id)
-                        ]
-                        const minId = Math.min(...allAssignedIds)
-                        const maxId = Math.max(...allAssignedIds)
-                        return val.member_id >= minId && val.member_id <= maxId
-                      })
-                      .map((val, key) => {
-                        return (
-                          <Typography key={key}>{val.member_id}, </Typography>
-                        )
-                      })}
+                    {releasedMembers.map((val, key) => {
+                      return (
+                        <Typography key={key}>{val.member_id}, </Typography>
+                      )
+                    })}
                   </Box>
                 </Box>
               </Box>
