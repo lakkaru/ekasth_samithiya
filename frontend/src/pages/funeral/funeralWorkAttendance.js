@@ -256,18 +256,29 @@ export default function FuneralWorkAttendance() {
         funeralFinesAdded = 0, 
         funeralFinesRemoved = 0,
         cemeteryFinesAdded = 0,
-        cemeteryFinesRemoved = 0
+        cemeteryFinesRemoved = 0,
+        eventFinesRemoved = 0
       } = response.data
       
       let successMsg = "සුසාන භුමි කටයුතු පැමිණීම සාර්ථකව යාවත්කාලීන කරන ලදී"
       
       const totalFinesAdded = funeralFinesAdded + cemeteryFinesAdded
-      const totalFinesRemoved = funeralFinesRemoved + cemeteryFinesRemoved
+      const totalFinesRemoved = funeralFinesRemoved + cemeteryFinesRemoved + eventFinesRemoved
       
       if (totalFinesAdded > 0 && totalFinesRemoved > 0) {
-        successMsg += ` (දඩ ${totalFinesAdded}ක් එකතු කර ${totalFinesRemoved}ක් ඉවත් කරන ලදී)`
+        let msg = ` (දඩ ${totalFinesAdded}ක් එකතු කර ${totalFinesRemoved}ක් ඉවත් කරන ලදී`
+        if (eventFinesRemoved > 0) {
+          msg += `, අවමංගල්‍ය දඩ ${eventFinesRemoved}ක් වැඩ දඩය සමග ප්‍රතිස්ථාපනය කරන ලදී`
+        }
+        msg += ')'
+        successMsg += msg
       } else if (totalFinesAdded > 0) {
-        successMsg += ` (දඩ ${totalFinesAdded}ක් එකතු කරන ලදී)`
+        let msg = ` (දඩ ${totalFinesAdded}ක් එකතු කරන ලදී`
+        if (eventFinesRemoved > 0) {
+          msg += `, අවමංගල්‍ය දඩ ${eventFinesRemoved}ක් ප්‍රතිස්ථාපනය කරන ලදී`
+        }
+        msg += ')'
+        successMsg += msg
       } else if (totalFinesRemoved > 0) {
         successMsg += ` (දඩ ${totalFinesRemoved}ක් ඉවත් කරන ලදී)`
       }

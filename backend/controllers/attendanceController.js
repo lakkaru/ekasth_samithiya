@@ -203,8 +203,12 @@ exports.getMeetingFines = async (req, res) => {
 
     // Find all members who have meeting fines for this meeting
     const membersWithMeetingFines = await Member.find({
-      'fines.eventId': meeting_id,
-      'fines.eventType': 'meeting'
+      fines: {
+        $elemMatch: {
+          eventId: meeting_id,
+          eventType: 'meeting'
+        }
+      }
     }).select('member_id name fines');
 
     console.log(`Found ${membersWithMeetingFines.length} members with meeting fines for meeting ${meeting_id}`)

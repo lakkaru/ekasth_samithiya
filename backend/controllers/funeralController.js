@@ -162,6 +162,9 @@ exports.updateFuneralAbsents = async (req, res) => {
     
     const { funeral_id, absentArray } = req.body.absentData;
     
+    console.log(`[updateFuneralAbsents] Called for funeral ${funeral_id}`);
+    console.log(`[updateFuneralAbsents] Received absentArray length: ${absentArray?.length}, types:`, absentArray?.slice(0, 5).map(id => typeof id));
+    
     // Check if both funeral_id and absentArray are provided
     if (!funeral_id || !Array.isArray(absentArray)) {
       return res.status(400).json({ message: "Invalid request data." });
@@ -179,11 +182,17 @@ exports.updateFuneralAbsents = async (req, res) => {
     const previousAbsents = currentFuneral.eventAbsents || [];
     const newAbsents = absentArray || [];
     
+    console.log(`[updateFuneralAbsents] Previous absents: ${previousAbsents.length}, types:`, previousAbsents.slice(0,5).map(id => typeof id));
+    console.log(`[updateFuneralAbsents] Member 206 check - in newAbsents: ${newAbsents.includes(206)}, in previousAbsents: ${previousAbsents.includes(206)}`);
+    console.log(`[updateFuneralAbsents] Member 206 check (string) - in newAbsents: ${newAbsents.includes('206')}, in previousAbsents: ${previousAbsents.includes('206')}`);
+    
     // Find members who were previously absent but now present (remove fines)
     const nowPresent = previousAbsents.filter(memberId => !newAbsents.includes(memberId));
     
     // Find members who are newly absent (add fines)
     const newlyAbsent = newAbsents.filter(memberId => !previousAbsents.includes(memberId));
+    
+    console.log(`[updateFuneralAbsents] Now present: ${nowPresent.length}, Newly absent: ${newlyAbsent.length}`);
 
     // Get members who should be excluded from fines (assigned to work, removed, or have special status)
     // Extract member_id from assignment objects
@@ -257,20 +266,57 @@ exports.updateFuneralAbsents = async (req, res) => {
       );
     }
 
-    // Add fines for newly absent members (excluding those with assignments, removed, or already have fines for this funeral)
+    // Add fines for newly absent members (excluding those with assignments, removed, or already have work fines for this funeral)
     if (newlyAbsentEligibleForFines.length > 0) {
-      // Check which members already have ANY fine for this funeral (any eventType)
-      const membersWithExistingFines = await Member.find({
+      // Check which members have cemetery-work or funeral-work fines for this funeral
+      // Note: Members with extraDue fines are NOT excluded - they can have both
+      // IMPORTANT: Use $elemMatch to ensure both conditions apply to the SAME fine
+      const membersWithWorkFines = await Member.find({
         member_id: { $in: newlyAbsentEligibleForFines },
-        'fines.eventId': funeral_id
+        fines: {
+          $elemMatch: {
+            eventId: funeral_id,
+            eventType: { $in: ['cemetery-work', 'funeral-work'] }
+          }
+        }
       }).select('member_id');
       
-      const membersWithExistingFineIds = membersWithExistingFines.map(member => member.member_id);
+      const membersWithWorkFineIds = membersWithWorkFines.map(member => member.member_id);
       
-      // Only add fines to members who don't already have ANY fine for this funeral
+      // Check which members already have event absent fine for this funeral
+      // IMPORTANT: Use $elemMatch to ensure both conditions apply to the SAME fine
+      const membersWithEventFines = await Member.find({
+        member_id: { $in: newlyAbsentEligibleForFines },
+        fines: {
+          $elemMatch: {
+            eventId: funeral_id,
+            eventType: 'funeral'
+          }
+        }
+      }).select('member_id');
+      
+      const membersWithEventFineIds = membersWithEventFines.map(member => member.member_id);
+      
+      // DEBUG: Log member 206's fines if they're in the newly absent list
+      if (newlyAbsentEligibleForFines.includes(206)) {
+        const member206Full = await Member.findOne({ member_id: 206 });
+        console.log('[DEBUG] Member 206 all fines for this funeral:');
+        const fines206 = member206Full?.fines?.filter(f => f.eventId?.toString() === funeral_id);
+        fines206?.forEach(fine => {
+          console.log(`  - Type: ${fine.eventType}, Amount: ${fine.amount}, Date: ${fine.date}`);
+        });
+      }
+      
+      // Only add event absent fines to members who:
+      // 1. Don't have cemetery-work or funeral-work fines for this funeral
+      // 2. Don't already have event absent fine for this funeral
+      // 3. CAN have extraDue fines (extraDue doesn't prevent event fines)
       const membersToFine = newlyAbsentEligibleForFines.filter(memberId => 
-        !membersWithExistingFineIds.includes(memberId)
+        !membersWithWorkFineIds.includes(memberId) && !membersWithEventFineIds.includes(memberId)
       );
+      
+      console.log(`[updateFuneralAbsents] Newly absent eligible: ${newlyAbsentEligibleForFines.length}, With work fines: ${membersWithWorkFineIds.length}, With event fines: ${membersWithEventFineIds.length}, To fine: ${membersToFine.length}`);
+      console.log(`[updateFuneralAbsents] Member 206 check - in newlyAbsentEligible: ${newlyAbsentEligibleForFines.includes(206)}, in membersWithWorkFineIds: ${membersWithWorkFineIds.includes(206)}, in membersWithEventFineIds: ${membersWithEventFineIds.includes(206)}, in membersToFine: ${membersToFine.includes(206)}`);
       
       if (membersToFine.length > 0) {
         const memberObjectIds = await Member.find({ member_id: { $in: membersToFine } }).select('_id');
@@ -289,6 +335,7 @@ exports.updateFuneralAbsents = async (req, res) => {
             }
           );
         }
+        console.log(`[updateFuneralAbsents] Successfully added ${membersToFine.length} event absent fines`);
       }
     }
 
@@ -298,14 +345,36 @@ exports.updateFuneralAbsents = async (req, res) => {
       { eventAbsents: newAbsents },
       { new: true }
     );
+    
+    console.log(`[updateFuneralAbsents] Updated funeral eventAbsents length: ${updatedFuneral.eventAbsents?.length}`);
+    console.log(`[updateFuneralAbsents] Member 206 in updated eventAbsents: ${updatedFuneral.eventAbsents?.includes(206)}`);
+    console.log(`[updateFuneralAbsents] Member 206 in updated eventAbsents (string): ${updatedFuneral.eventAbsents?.includes('206')}`);
 
     // Calculate final statistics
-    const membersWithExistingFines = await Member.find({
+    const membersWithWorkFines = await Member.find({
       member_id: { $in: newlyAbsentEligibleForFines },
-      'fines.eventId': funeral_id
+      fines: {
+        $elemMatch: {
+          eventId: funeral_id,
+          eventType: { $in: ['cemetery-work', 'funeral-work'] }
+        }
+      }
     }).select('member_id');
-    const existingFinesCount = membersWithExistingFines.length;
-    const actualFinesAdded = Math.max(0, newlyAbsentEligibleForFines.length - existingFinesCount);
+    const workFinesCount = membersWithWorkFines.length;
+    
+    const membersWithEventFines = await Member.find({
+      member_id: { $in: newlyAbsentEligibleForFines },
+      fines: {
+        $elemMatch: {
+          eventId: funeral_id,
+          eventType: 'funeral'
+        }
+      }
+    }).select('member_id');
+    const eventFinesCount = membersWithEventFines.length;
+    
+    const actualFinesAdded = eventFinesCount;
+    const excludedDueToWorkFines = workFinesCount;
     
     // Respond with the updated document and fine information
     res.status(200).json({
@@ -314,7 +383,7 @@ exports.updateFuneralAbsents = async (req, res) => {
       finesAdded: actualFinesAdded,
       finesRemoved: nowPresent.length,
       excludedFromFines: newlyAbsent.length - newlyAbsentEligibleForFines.length,
-      excludedDueToExistingFines: existingFinesCount
+      excludedDueToWorkFines: excludedDueToWorkFines
     });
   } catch (error) {
     res.status(500).json({ message: "Internal server error." });
@@ -332,8 +401,12 @@ exports.getFuneralFines = async (req, res) => {
 
     // Find all members who have funeral attendance fines for this funeral
     const membersWithFuneralFines = await Member.find({
-      'fines.eventId': funeral_id,
-      'fines.eventType': 'funeral'
+      fines: {
+        $elemMatch: {
+          eventId: funeral_id,
+          eventType: 'funeral'
+        }
+      }
     }).select('member_id name fines');
 
     // Extract funeral attendance fine details - only include members with non-zero fine amounts
@@ -569,6 +642,24 @@ exports.updateWorkAttendance = async (req, res) => {
     const funeralWorkFine = fineSettings.funeralWorkFine;
     const cemeteryWorkFine = fineSettings.cemeteryWorkFine;
     
+    // Track how many event absent fines will be removed when adding work fines
+    let eventFinesRemovedCount = 0;
+    
+    // Check if newly absent members have existing event absent fines (will be removed)
+    if (funeralNewlyAbsent.length > 0 || cemeteryNewlyAbsent.length > 0) {
+      const allNewlyAbsent = [...new Set([...funeralNewlyAbsent, ...cemeteryNewlyAbsent])];
+      const membersWithEventFines = await Member.find({
+        member_id: { $in: allNewlyAbsent },
+        fines: {
+          $elemMatch: {
+            eventId: funeralId,
+            eventType: 'funeral'
+          }
+        }
+      }).select('member_id');
+      eventFinesRemovedCount = membersWithEventFines.length;
+    }
+    
     // Remove funeral work fines for members who are now present
     if (funeralNowPresent.length > 0) {
       const memberObjectIds = await Member.find({ member_id: { $in: funeralNowPresent } }).select('_id');
@@ -605,11 +696,25 @@ exports.updateWorkAttendance = async (req, res) => {
       );
     }
     
-    // Add funeral work fines for newly absent members
+    // Add funeral work fines for newly absent members and remove event absent fines if they exist
     if (funeralNewlyAbsent.length > 0) {
       const memberObjectIds = await Member.find({ member_id: { $in: funeralNewlyAbsent } }).select('_id');
       
       for (let memberObjId of memberObjectIds) {
+        // First, remove any event absent fine for this funeral
+        await Member.findByIdAndUpdate(
+          memberObjId._id,
+          {
+            $pull: {
+              fines: {
+                eventId: funeralId,
+                eventType: "funeral"
+              }
+            }
+          }
+        );
+        
+        // Then add the funeral-work fine
         await Member.findByIdAndUpdate(
           memberObjId._id,
           {
@@ -625,11 +730,25 @@ exports.updateWorkAttendance = async (req, res) => {
       }
     }
     
-    // Add cemetery work fines for newly absent members
+    // Add cemetery work fines for newly absent members and remove event absent fines if they exist
     if (cemeteryNewlyAbsent.length > 0) {
       const memberObjectIds = await Member.find({ member_id: { $in: cemeteryNewlyAbsent } }).select('_id');
       
       for (let memberObjId of memberObjectIds) {
+        // First, remove any event absent fine for this funeral
+        await Member.findByIdAndUpdate(
+          memberObjId._id,
+          {
+            $pull: {
+              fines: {
+                eventId: funeralId,
+                eventType: "funeral"
+              }
+            }
+          }
+        );
+        
+        // Then add the cemetery-work fine
         await Member.findByIdAndUpdate(
           memberObjId._id,
           {
@@ -661,7 +780,8 @@ exports.updateWorkAttendance = async (req, res) => {
       funeralFinesAdded: funeralNewlyAbsent.length,
       funeralFinesRemoved: funeralNowPresent.length,
       cemeteryFinesAdded: cemeteryNewlyAbsent.length,
-      cemeteryFinesRemoved: cemeteryNowPresent.length
+      cemeteryFinesRemoved: cemeteryNowPresent.length,
+      eventFinesRemoved: eventFinesRemovedCount
     });
   } catch (error) {
     console.error("Error updating funeral work attendance:", error);
