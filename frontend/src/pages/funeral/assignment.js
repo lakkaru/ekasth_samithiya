@@ -426,89 +426,103 @@ export default function Assignment() {
               const minMemberId = Math.min(...allAssignedIds)
               const maxMemberId = Math.max(...allAssignedIds)
               
-              const releasedMembers = allMembers.filter(
-                member =>
-                  member.member_id >= minMemberId &&
-                  member.member_id <= maxMemberId &&
-                  (member.status === "free" ||
-                    member.status === "funeral-free" ||
-                    member.status === "attendance-free")
-              )
+              // Check if wrapping occurred
+              const sortedIds = [...allAssignedIds].sort((a, b) => a - b)
+              const hasGap = sortedIds.some((id, idx) => {
+                if (idx === 0) return false
+                return id - sortedIds[idx - 1] > 1 + (sortedIds.length / 2)
+              })
+              
+              let releasedMembers
+              if (hasGap) {
+                // Wrapping occurred - find the wrap point
+                let maxGap = 0
+                let wrapIndex = 0
+                for (let i = 1; i < sortedIds.length; i++) {
+                  const gap = sortedIds[i] - sortedIds[i - 1]
+                  if (gap > maxGap) {
+                    maxGap = gap
+                    wrapIndex = i
+                  }
+                }
+                
+                const segment1Max = sortedIds[wrapIndex - 1]
+                const segment2Min = sortedIds[wrapIndex]
+                
+                releasedMembers = allMembers.filter(
+                  member =>
+                    ((member.member_id >= segment2Min && member.member_id <= maxMemberId) ||
+                     (member.member_id >= minMemberId && member.member_id <= segment1Max)) &&
+                    (member.status === "free" ||
+                      member.status === "funeral-free" ||
+                      member.status === "attendance-free")
+                )
+              } else {
+                // No wrapping - simple range check
+                releasedMembers = allMembers.filter(
+                  member =>
+                    member.member_id >= minMemberId &&
+                    member.member_id <= maxMemberId &&
+                    (member.status === "free" ||
+                      member.status === "funeral-free" ||
+                      member.status === "attendance-free")
+                )
+              }
+              
               setReleasedMembers(releasedMembers)
             }
             return
           }
 
-          // For new assignments: include members beyond last assigned OR members who were removed from last funeral
-          const candidateMembers = eligibleMembers.filter(
-            member =>
-              member.member_id > lastAssignedMember_id ||
-              lastRemovedMember_ids.includes(member.member_id)
+          // First, collect removed members from last funeral that are in eligible pool
+          const removedMembersToInclude = eligibleMembers.filter(m => 
+            lastRemovedMember_ids.includes(m.member_id)
           )
-
-          if (candidateMembers.length === 0) {
-            // If no candidates, start from beginning
-            const assignedMembers = eligibleMembers.slice(0, 40)
-            setAllMembers(assignedMembers)
-            setCemeteryAssignments(assignedMembers.slice(0, 20))
-            setFuneralAssignments(assignedMembers.slice(20, 40))
-            setNextMemberIndex(40 % eligibleMembers.length)
-            
-            if (assignedMembers.length > 0) {
-              const minMemberId = Math.min(...assignedMembers.map(m => m.member_id))
-              const maxMemberId = Math.max(...assignedMembers.map(m => m.member_id))
-              const releasedMembers = allMembers.filter(
-                member =>
-                  member.member_id >= minMemberId &&
-                  member.member_id <= maxMemberId &&
-                  (member.status === "free" ||
-                    member.status === "funeral-free" ||
-                    member.status === "attendance-free")
-              )
-              setReleasedMembers(releasedMembers)
-            } else {
-              setReleasedMembers([])
-            }
-            return
-          }
-
-          // Find starting index - prioritize removed members from last funeral first
+          
+          // Find starting index in the full eligibleMembers array (for non-removed members)
           let startIndex = 0
-          if (lastRemovedMember_ids.length > 0) {
-            // Start with the first removed member or first member after last assigned, whichever comes first
-            const firstRemovedIndex = candidateMembers.findIndex(
-              m => lastRemovedMember_ids.includes(m.member_id)
-            )
-            const firstAfterLastIndex = candidateMembers.findIndex(
-              m => m.member_id > lastAssignedMember_id
-            )
-            
-            if (firstRemovedIndex !== -1 && firstAfterLastIndex !== -1) {
-              startIndex = Math.min(firstRemovedIndex, firstAfterLastIndex)
-            } else if (firstRemovedIndex !== -1) {
-              startIndex = firstRemovedIndex
-            } else if (firstAfterLastIndex !== -1) {
-              startIndex = firstAfterLastIndex
-            }
-          } else if (lastAssignedMember_id > 0) {
-            // Find the index of the member right after the last assigned
-            startIndex = candidateMembers.findIndex(
+          
+          if (lastAssignedMember_id > 0) {
+            // Find the first member with ID greater than last assigned
+            const indexAfterLast = eligibleMembers.findIndex(
               member => member.member_id > lastAssignedMember_id
             )
-            if (startIndex === -1) startIndex = 0
+            
+            if (indexAfterLast !== -1) {
+              startIndex = indexAfterLast
+            } else {
+              // If no member found after last assigned, wrap to beginning
+              startIndex = 0
+            }
+          }
+          
+          // Calculate how many additional members we need (40 total minus removed members)
+          const membersNeeded = 40
+          const additionalMembersNeeded = Math.max(0, membersNeeded - removedMembersToInclude.length)
+          
+          // Create a circular array to get additional members, wrapping around when reaching the end
+          const additionalMembers = []
+          
+          // Use modulo to wrap around the entire eligibleMembers array
+          let added = 0
+          let i = 0
+          while (added < additionalMembersNeeded && i < eligibleMembers.length) {
+            const index = (startIndex + i) % eligibleMembers.length
+            const candidate = eligibleMembers[index]
+            
+            // Only add if not already in removed members list
+            if (!lastRemovedMember_ids.includes(candidate.member_id)) {
+              additionalMembers.push(candidate)
+              added++
+            }
+            i++
           }
 
-          // Create a circular array to get 40 members from candidates, wrapping if needed
-          const assignedMembers = []
-          const membersNeeded = 40
-          
-          for (let i = 0; i < membersNeeded && candidateMembers.length > 0; i++) {
-            const index = (startIndex + i) % candidateMembers.length
-            assignedMembers.push(candidateMembers[index])
-          }
+          // Combine: removed members first, then additional members
+          const assignedMembers = [...removedMembersToInclude, ...additionalMembers]
 
           // Set the next index for when members are removed
-          setNextMemberIndex((startIndex + membersNeeded) % eligibleMembers.length)
+          setNextMemberIndex((startIndex + i) % eligibleMembers.length)
 
           // console.log('assignedMembers: ', assignedMembers)
           setAllMembers(assignedMembers)
@@ -517,17 +531,55 @@ export default function Assignment() {
 
           // Separate out 'free' or 'convenient' members within the assignment range
           if (assignedMembers.length > 0) {
-            const minMemberId = Math.min(...assignedMembers.map(m => m.member_id))
-            const maxMemberId = Math.max(...assignedMembers.map(m => m.member_id))
+            const assignedMemberIds = assignedMembers.map(m => m.member_id)
+            const minMemberId = Math.min(...assignedMemberIds)
+            const maxMemberId = Math.max(...assignedMemberIds)
             
-            const releasedMembers = allMembers.filter(
-              member =>
-                member.member_id >= minMemberId &&
-                member.member_id <= maxMemberId &&
-                (member.status === "free" ||
-                  member.status === "funeral-free" ||
-                  member.status === "attendance-free")
-            )
+            // Check if wrapping occurred (assignment wraps from end to start)
+            // This happens when we have both high and low member IDs in the assignment
+            const sortedIds = [...assignedMemberIds].sort((a, b) => a - b)
+            const hasGap = sortedIds.some((id, idx) => {
+              if (idx === 0) return false
+              return id - sortedIds[idx - 1] > 1 + (sortedIds.length / 2) // Large gap indicates wrap
+            })
+            
+            let releasedMembers
+            if (hasGap) {
+              // Wrapping occurred - check if member is in either segment
+              // Find the wrap point (largest gap)
+              let maxGap = 0
+              let wrapIndex = 0
+              for (let i = 1; i < sortedIds.length; i++) {
+                const gap = sortedIds[i] - sortedIds[i - 1]
+                if (gap > maxGap) {
+                  maxGap = gap
+                  wrapIndex = i
+                }
+              }
+              
+              const segment1Max = sortedIds[wrapIndex - 1] // End of first segment
+              const segment2Min = sortedIds[wrapIndex] // Start of second segment
+              
+              releasedMembers = allMembers.filter(
+                member =>
+                  ((member.member_id >= segment2Min && member.member_id <= maxMemberId) ||
+                   (member.member_id >= minMemberId && member.member_id <= segment1Max)) &&
+                  (member.status === "free" ||
+                    member.status === "funeral-free" ||
+                    member.status === "attendance-free")
+              )
+            } else {
+              // No wrapping - simple range check
+              releasedMembers = allMembers.filter(
+                member =>
+                  member.member_id >= minMemberId &&
+                  member.member_id <= maxMemberId &&
+                  (member.status === "free" ||
+                    member.status === "funeral-free" ||
+                    member.status === "attendance-free")
+              )
+            }
+            
             setReleasedMembers(releasedMembers)
           } else {
             setReleasedMembers([])
