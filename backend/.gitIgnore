@@ -11,3 +11,5 @@ node_modules/
 
 # WhatsApp Web session storage
 .wwebjs_auth/
+
+scripts/
