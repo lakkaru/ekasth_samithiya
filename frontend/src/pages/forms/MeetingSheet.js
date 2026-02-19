@@ -1,8 +1,7 @@
-import { Box, Grid2, Typography, Button } from "@mui/material"
+import { Box, Grid2, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from "@mui/material"
 import React, { useState, useEffect } from "react"
 
 import Layout from "../../components/layout"
-import SignChartTable from "../../components/common/SignChartTable"
 
 import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
@@ -10,13 +9,112 @@ import html2canvas from "html2canvas"
 import api from "../../utils/api"
 const baseUrl = process.env.GATSBY_API_BASE_URL
 
+// Custom table component for meeting sign sheet
+const MeetingSignTable = ({ columnsArray, dataArray }) => {
+  // Debug: Check if any rows have hasAbsent flags
+  React.useEffect(() => {
+    const rowsWithAbsents = dataArray.filter(row => 
+      row.hasAbsent1 || row.hasAbsent2 || row.hasAbsent3
+    )
+    if (rowsWithAbsents.length > 0) {
+      console.log("Table rendering with absents:", rowsWithAbsents.map((row, idx) => ({
+        rowIndex: idx,
+        id1: row.id1, hasAbsent1: row.hasAbsent1,
+        id2: row.id2, hasAbsent2: row.hasAbsent2,
+        id3: row.id3, hasAbsent3: row.hasAbsent3,
+      })))
+    }
+  }, [dataArray])
+
+  return (
+    <Paper sx={{ width: "100%", overflow: "hidden" }}>
+      <TableContainer>
+        <Table>
+          <TableHead>
+            <TableRow>
+              {columnsArray.map(column => (
+                <TableCell
+                  key={column.id}
+                  align="center"
+                  sx={{
+                    padding: "4px",
+                    border: "1px solid black",
+                    minWidth: column.minWidth,
+                    textAlign: "center",
+                  }}
+                >
+                  {column.label}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {dataArray.map((row, index) => (
+              <TableRow key={index} sx={{ border: "1px solid black" }}>
+                {columnsArray.map((column, colIndex) => {
+                  const value = row[column.id]
+                  const isIdColumn = [0, 2, 4].includes(colIndex)
+                  const hasAbsentFlag = row[`hasAbsent${Math.floor(colIndex / 2) + 1}`]
+                  
+                  // Debug: Log when we should show a border
+                  if (isIdColumn && hasAbsentFlag && index === 0) {
+                    console.log(`Should show red border for column ${colIndex}, member ID: ${value}, hasAbsentFlag:`, hasAbsentFlag)
+                  }
+
+                  return (
+                    <TableCell
+                      key={column.id}
+                      align={column.align || "center"}
+                      sx={{
+                        padding: "0px",
+                        border: ".5px solid black",
+                        color: column.color || "inherit",
+                      }}
+                    >
+                      {isIdColumn ? (
+                        <Box
+                          sx={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: "50%",
+                            border: hasAbsentFlag ? "2px solid #d32f2f" : "none",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            margin: "0 auto",
+                            fontSize: "1.2em",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {value}
+                        </Box>
+                      ) : (
+                        value
+                      )}
+                    </TableCell>
+                  )
+                })}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Paper>
+  )
+}
+
 export default function MeetingSheet() {
   const [members, setMembers] = useState([])
   
   useEffect(() => {
     api.get(`${baseUrl}/forms/meeting-sign-due`).then(res => {
       setMembers(res.data)
-      // console.log(res.data)
+      console.log("Total members received:", res.data.length)
+      const withAbsents = res.data.filter(m => m.hasConsecutiveAbsents)
+      console.log("Members with consecutive absents:", withAbsents.length)
+      if (withAbsents.length > 0) {
+        console.log("Sample members with absents:", withAbsents.slice(0, 10).map(m => ({ id: m.member_id, hasAbsents: m.hasConsecutiveAbsents })))
+      }
     })
   }, [])
   const generateDataArray = (members, startRange, endRange) => {
@@ -26,21 +124,32 @@ export default function MeetingSheet() {
       )
       .map(member => ({
         member_id: member.member_id,
-        totalDue: Math.max(member.totalDue ?? 0, 0) // Set totalDue to 0 if undefined or negative value
+        hasConsecutiveAbsents: member.hasConsecutiveAbsents || false
       }))
 
     const numRows = Math.ceil(filteredMembers.length / 3)
-
-    return Array.from({ length: numRows }, (_, index) => ({
+    
+    const dataArray = Array.from({ length: numRows }, (_, index) => ({
       id1: filteredMembers[index]?.member_id || "",
-      sign1: filteredMembers[index]?.totalDue ?? "",
+      hasAbsent1: filteredMembers[index]?.hasConsecutiveAbsents || false,
+      sign1: "",
 
       id2: filteredMembers[index + numRows]?.member_id || "",
-      sign2: filteredMembers[index + numRows]?.totalDue ?? "",
+      hasAbsent2: filteredMembers[index + numRows]?.hasConsecutiveAbsents || false,
+      sign2: "",
 
       id3: filteredMembers[index + numRows * 2]?.member_id || "",
-      sign3: filteredMembers[index + numRows * 2]?.totalDue ?? "",
+      hasAbsent3: filteredMembers[index + numRows * 2]?.hasConsecutiveAbsents || false,
+      sign3: "",
     }))
+    
+    // Debug: Log members with absents in this range
+    const withAbsentsInRange = filteredMembers.filter(m => m.hasConsecutiveAbsents)
+    if (withAbsentsInRange.length > 0) {
+      console.log(`Range ${startRange}-${endRange}: ${withAbsentsInRange.length} members with absents:`, withAbsentsInRange.map(m => m.member_id))
+    }
+    
+    return dataArray
   }
 
   
@@ -153,14 +262,9 @@ const saveAsPDF = () => {
           </Box>
         </Box>
         <Box sx={{ mb: 3 }}>
-          <SignChartTable
+          <MeetingSignTable
             columnsArray={columnsArray}
             dataArray={dataArray100}
-            borders={true}
-            hidePagination={true}
-            totalRow={false}
-            // dataAlignment={"left"}
-            firstPage={34}
           />
         </Box>
       </Box>
@@ -203,14 +307,9 @@ const saveAsPDF = () => {
           </Box>
         </Box>
         <Box sx={{ mb: 3 }}>
-          <SignChartTable
+          <MeetingSignTable
             columnsArray={columnsArray}
             dataArray={dataArray200}
-            borders={true}
-            hidePagination={true}
-            totalRow={false}
-            dataAlignment={"center"}
-            firstPage={34}
           />
         </Box>
       </Box>
@@ -251,14 +350,9 @@ const saveAsPDF = () => {
           </Box>
         </Box>
         <Box sx={{ mb: 3 }}>
-          <SignChartTable
+          <MeetingSignTable
             columnsArray={columnsArray}
             dataArray={dataArray300}
-            borders={true}
-            hidePagination={true}
-            totalRow={false}
-            dataAlignment={"center"}
-            firstPage={34}
           />
         </Box>
       </Box>
