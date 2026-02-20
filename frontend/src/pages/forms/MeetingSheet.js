@@ -77,7 +77,7 @@ const MeetingSignTable = ({ columnsArray, dataArray }) => {
                             width: 40,
                             height: 40,
                             borderRadius: "50%",
-                            border: hasAbsentFlag ? "2px solid #d32f2f" : "none",
+                              border: hasAbsentFlag ? "1px solid black" : "none",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
