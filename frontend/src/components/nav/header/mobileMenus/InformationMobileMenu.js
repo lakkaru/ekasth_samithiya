@@ -30,6 +30,30 @@ const InformationMobileMenu = ({ isAuthenticated, onMenuItemClick }) => {
 
       <Button
         color="inherit"
+        onClick={() => onMenuItemClick("/info/siblings")}
+        startIcon={<FamilyRestroomIcon />}
+        sx={{
+          textTransform: "none",
+          width: "100%",
+          mb: 1,
+          justifyContent: "flex-start",
+          backgroundColor: "rgba(102, 126, 234, 0.15)",
+          border: "1px solid rgba(102, 126, 234, 0.2)",
+          "&:hover": {
+            backgroundColor: "rgba(102, 126, 234, 0.25)",
+            transform: "translateX(2px)",
+          },
+          borderRadius: 2,
+          py: 1.5,
+          color: "#333",
+          transition: "all 0.2s ease",
+        }}
+      >
+        30% සමාජිකත්ව
+      </Button>
+
+      <Button
+        color="inherit"
         onClick={() => onMenuItemClick("/member/special-memberships")}
         startIcon={<StarsIcon />}
         sx={{
@@ -73,7 +97,7 @@ const InformationMobileMenu = ({ isAuthenticated, onMenuItemClick }) => {
           transition: "all 0.2s ease",
         }}
       >
-        අතිරේක ආධාර එකතු කිරීමේ ලැයිස්තුව
+        අතිරේක ආධාර එකතු කල යුතු සාමාජිකයන්
       </Button>
 
       <Button
@@ -97,31 +121,7 @@ const InformationMobileMenu = ({ isAuthenticated, onMenuItemClick }) => {
           transition: "all 0.2s ease",
         }}
       >
-        අතිරේක ආධාර සලකුණු කිරීමේ ලැයිස්තුව
-      </Button>
-
-      <Button
-        color="inherit"
-        onClick={() => onMenuItemClick("/info/siblings")}
-        startIcon={<FamilyRestroomIcon />}
-        sx={{
-          textTransform: "none",
-          width: "100%",
-          mb: 1,
-          justifyContent: "flex-start",
-          backgroundColor: "rgba(102, 126, 234, 0.15)",
-          border: "1px solid rgba(102, 126, 234, 0.2)",
-          "&:hover": {
-            backgroundColor: "rgba(102, 126, 234, 0.25)",
-            transform: "translateX(2px)",
-          },
-          borderRadius: 2,
-          py: 1.5,
-          color: "#333",
-          transition: "all 0.2s ease",
-        }}
-      >
-        30% සමාජිකත්ව
+        අතිරේක ආධාර ගෙවිය යුතු සාමාජිකයන්
       </Button>
     </Box>
   )

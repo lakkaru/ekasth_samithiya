@@ -75,6 +75,14 @@ const InformationMenu = ({ isAuthenticated }) => {
         </Typography>
         <MenuItem
           onClick={() => {
+            navigate("/info/siblings")
+            handleMenuClose()
+          }}
+        >
+          👨‍👩‍👧 30% සමාජිකත්ව
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
             navigate("/member/special-memberships")
             handleMenuClose()
           }}
@@ -87,7 +95,7 @@ const InformationMenu = ({ isAuthenticated }) => {
             handleMenuClose()
           }}
         >
-          📋 අතිරේක ආධාර එකතු කිරීමේ ලැයිස්තුව
+          📋 අතිරේක ආධාර එකතු කල යුතු සාමාජිකයන්
         </MenuItem>
         <MenuItem
           onClick={() => {
@@ -95,15 +103,7 @@ const InformationMenu = ({ isAuthenticated }) => {
             handleMenuClose()
           }}
         >
-          ✅ අතිරේක ආධාර සලකුණු කිරීමේ ලැයිස්තුව
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            navigate("/info/siblings")
-            handleMenuClose()
-          }}
-        >
-          👨‍👩‍👧 30% සමාජිකත්ව
+          ✅ අතිරේක ආධාර ගෙවිය යුතු සාමාජිකයන්
         </MenuItem>
       </Menu>
     </>
