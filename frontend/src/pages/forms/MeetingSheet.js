@@ -117,7 +117,7 @@ export default function MeetingSheet() {
 
   const ROWS_PER_PAGE = 34
   const COLS = 3
-  const MEMBERS_PER_PAGE = ROWS_PER_PAGE * COLS
+  const MEMBERS_PER_PAGE = 100 // 34+34+32 = 100 per page; last 2 rows of col3 stay blank
 
   // Build a full sequential list from ID 1 to max member_id.
   // Gaps (IDs with no member) are marked noMember: true.
