@@ -28,7 +28,7 @@ const MeetingSignTable = ({ columnsArray, dataArray }) => {
   return (
     <Paper sx={{ width: "100%", overflow: "hidden" }}>
       <TableContainer>
-        <Table>
+        <Table size="small">
           <TableHead>
             <TableRow>
               {columnsArray.map(column => (
@@ -36,10 +36,12 @@ const MeetingSignTable = ({ columnsArray, dataArray }) => {
                   key={column.id}
                   align="center"
                   sx={{
-                    padding: "4px",
+                    padding: "2px 4px",
                     border: "1px solid black",
                     minWidth: column.minWidth,
                     textAlign: "center",
+                    fontSize: "0.75rem",
+                    lineHeight: 1.2,
                   }}
                 >
                   {column.label}
@@ -56,6 +58,7 @@ const MeetingSignTable = ({ columnsArray, dataArray }) => {
                   const colNum = Math.floor(colIndex / 2) + 1
                   const hasAbsentFlag = row[`hasAbsent${colNum}`]
                   const isNoMember = row[`noMember${colNum}`]
+                  const isAttendanceFree = row[`attendanceFree${colNum}`]
                   const isSignColumn = [1, 3, 5].includes(colIndex)
 
                   return (
@@ -66,30 +69,36 @@ const MeetingSignTable = ({ columnsArray, dataArray }) => {
                         padding: "0px",
                         border: ".5px solid black",
                         color: column.color || "inherit",
+                        height: "27px",
                       }}
                     >
                       {isIdColumn ? (
                         value ? (
                           <Box
                             sx={{
-                              width: 40,
-                              height: 40,
+                              width: 25,
+                              height: 25,
                               borderRadius: "50%",
                               border: hasAbsentFlag ? "1px solid black" : "none",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
                               margin: "0 auto",
-                              fontSize: "1.2em",
+                              fontSize: "0.78rem",
                               fontWeight: "bold",
+                              lineHeight: 1,
                             }}
                           >
                             {value}
                           </Box>
                         ) : null
                       ) : isSignColumn && isNoMember ? (
-                        <Box sx={{ pl: "6px", color: "#aaa", fontStyle: "italic", fontSize: "0.85em" }}>
+                        <Box sx={{ pl: "4px", color: "#aaa", fontStyle: "italic", fontSize: "0.7rem", lineHeight: "27px" }}>
                           No member
+                        </Box>
+                      ) : isSignColumn && isAttendanceFree ? (
+                        <Box sx={{ pl: "4px", color: "#e65100", fontStyle: "italic", fontSize: "0.7rem", lineHeight: "27px" }}>
+                          Attendance free
                         </Box>
                       ) : (
                         value
@@ -127,8 +136,8 @@ export default function MeetingSheet() {
     const id = i + 1
     const m = memberMap.get(id)
     return m
-      ? { member_id: id, hasConsecutiveAbsents: m.hasConsecutiveAbsents || false, noMember: false }
-      : { member_id: id, hasConsecutiveAbsents: false, noMember: true }
+      ? { member_id: id, hasConsecutiveAbsents: m.hasConsecutiveAbsents || false, noMember: false, attendanceFree: m.status === 'attendance-free' }
+      : { member_id: id, hasConsecutiveAbsents: false, noMember: true, attendanceFree: false }
   })
 
   // Split into pages of MEMBERS_PER_PAGE each
@@ -143,14 +152,17 @@ export default function MeetingSheet() {
       id1:      slice[row]?.member_id || "",
       hasAbsent1: slice[row]?.hasConsecutiveAbsents || false,
       noMember1:  slice[row]?.noMember || false,
+      attendanceFree1: slice[row]?.attendanceFree || false,
       sign1: "",
       id2:      slice[row + ROWS_PER_PAGE]?.member_id || "",
       hasAbsent2: slice[row + ROWS_PER_PAGE]?.hasConsecutiveAbsents || false,
       noMember2:  slice[row + ROWS_PER_PAGE]?.noMember || false,
+      attendanceFree2: slice[row + ROWS_PER_PAGE]?.attendanceFree || false,
       sign2: "",
       id3:      slice[row + ROWS_PER_PAGE * 2]?.member_id || "",
       hasAbsent3: slice[row + ROWS_PER_PAGE * 2]?.hasConsecutiveAbsents || false,
       noMember3:  slice[row + ROWS_PER_PAGE * 2]?.noMember || false,
+      attendanceFree3: slice[row + ROWS_PER_PAGE * 2]?.attendanceFree || false,
       sign3: "",
     }))
   }
@@ -167,18 +179,18 @@ export default function MeetingSheet() {
   const handlePrint = () => window.print()
 
   const PageHeading = () => (
-    <Box>
-      <Typography variant="h6" sx={{ fontWeight: "bold", textAlign: "center", textDecoration: "underline" }}>
+    <Box sx={{ mb: "2px" }}>
+      <Typography variant="h6" sx={{ fontWeight: "bold", textAlign: "center", textDecoration: "underline", lineHeight: 1.3 }}>
         විල්බාගෙදර එක්සත් අවමංගල්‍යාධාර සමිතිය
       </Typography>
-      <Box sx={{ display: "flex", gap: 5, mb: "4px" }}>
-        <Typography sx={{ fontWeight: "bold" }}>මහා සභාවට සහභාගිත්වය</Typography>
-        <Typography>
+      <Box sx={{ display: "flex", gap: 3, mb: "2px", flexWrap: "nowrap", alignItems: "center" }}>
+        <Typography sx={{ fontWeight: "bold", whiteSpace: "nowrap", fontSize: "0.85rem" }}>මහා සභාවට සහභාගිත්වය</Typography>
+        <Typography sx={{ whiteSpace: "nowrap", fontSize: "0.85rem" }}>
           දිනය:- {new Date().getFullYear()}/
           {(new Date().getMonth() + 1).toString().padStart(2, "0")}
           /..........
         </Typography>
-        <Typography>සාමාජික සංඛ්‍යාව:- ..........</Typography>
+        <Typography sx={{ whiteSpace: "nowrap", fontSize: "0.85rem" }}>සාමාජික සංඛ්‍යාව:- ..........</Typography>
       </Box>
     </Box>
   )
@@ -211,7 +223,7 @@ export default function MeetingSheet() {
             sx={i > 0 ? { '@media print': { pageBreakBefore: 'always', breakBefore: 'page' } } : {}}
           >
             <PageHeading />
-            <Box sx={{ mb: 3 }}>
+            <Box sx={{ mb: 0 }}>
               <MeetingSignTable columnsArray={columnsArray} dataArray={buildPageData(pageMembers)} />
             </Box>
           </Box>

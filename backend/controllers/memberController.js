@@ -1894,7 +1894,7 @@ exports.getDueForMeetingSign = async (req, res) => {
       status: { $ne: "free" }, // Exclude members with status 'free'
       deactivated_at: null, // Exclude deactivated members
     })
-      .select("_id member_id name due2023 fines")
+      .select("_id member_id name due2023 fines status")
       .sort("member_id");
 
     // Get membership payments for the current year
@@ -1964,12 +1964,9 @@ exports.getDueForMeetingSign = async (req, res) => {
       const hasAbsents = consecutiveAbsentMemberIds.includes(member.member_id.toString());
       return {
         member_id: member.member_id,
-        // name: member.name,
-        // membershipDue: membershipDue < 0 ? 0 : membershipDue,
-        // due2023: member.due2023,
-        // totalFines: totalFines,
         totalDue: totalDue, // Total amount due
         hasConsecutiveAbsents: hasAbsents,
+        status: member.status || 'regular',
       };
     });
 
