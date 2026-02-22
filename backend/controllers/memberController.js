@@ -43,6 +43,22 @@ async function membershipRateForMember(siblingsCount, monthlyRate) {
   }
 }
 
+// Returns member_id values of dead members whose membership continues because they
+// still have at least one living dependent (dateOfDeath not set on the dependent).
+// Used in list queries to keep these members visible in attendance/collection sheets.
+async function getDeceasedMembersWithLivingDependents() {
+  const deceasedMembers = await Member.find({
+    dateOfDeath: { $exists: true, $ne: null }
+  }).populate({
+    path: 'dependents',
+    match: { $or: [{ dateOfDeath: null }, { dateOfDeath: { $exists: false } }] },
+    select: '_id dateOfDeath'
+  });
+  return deceasedMembers
+    .filter(m => m.dependents && m.dependents.length > 0)
+    .map(m => m.member_id);
+}
+
 // Get monthly membership rate for a specific year. Prefer year-specific setting
 // e.g. MONTHLY_MEMBERSHIP_RATE_2025. Fallback to generic MONTHLY_MEMBERSHIP_RATE
 // and then to 300 if nothing is set.
@@ -2673,10 +2689,14 @@ exports.getMembersForCollection = async (req, res) => {
       ]
     }
 
+    // Allow members who are not deceased, OR deceased but whose membership continues because
+    // they still have at least one living dependent registered in the system.
+    const continuingMemberIds = await getDeceasedMembersWithLivingDependents();
     const noDeathCondition = {
       $or: [
         { dateOfDeath: { $exists: false } },
-        { dateOfDeath: null }
+        { dateOfDeath: null },
+        { member_id: { $in: continuingMemberIds } }
       ]
     }
 
@@ -2743,10 +2763,14 @@ exports.getMembersStatusPublic = async (req, res) => {
       ]
     }
 
+    // Allow members who are not deceased, OR deceased but whose membership continues because
+    // they still have at least one living dependent registered in the system.
+    const continuingMemberIds = await getDeceasedMembersWithLivingDependents();
     const noDeathCondition = {
       $or: [
         { dateOfDeath: { $exists: false } },
-        { dateOfDeath: null }
+        { dateOfDeath: null },
+        { member_id: { $in: continuingMemberIds } }
       ]
     }
 
@@ -2819,10 +2843,14 @@ exports.getMembersForCollectionMarking = async (req, res) => {
       ]
     }
 
+    // Allow members who are not deceased, OR deceased but whose membership continues because
+    // they still have at least one living dependent registered in the system.
+    const continuingMemberIds = await getDeceasedMembersWithLivingDependents();
     const noDeathCondition = {
       $or: [
         { dateOfDeath: { $exists: false } },
-        { dateOfDeath: null }
+        { dateOfDeath: null },
+        { member_id: { $in: continuingMemberIds } }
       ]
     }
 
@@ -2855,6 +2883,7 @@ exports.getMembersForCollectionMarking = async (req, res) => {
 exports.getMembersForCommonWorkDocument = async (req, res) => {
   try {
     // Get all members (including deactivated and deceased ones to keep blank rows)
+    const continuingMemberIds = await getDeceasedMembersWithLivingDependents();
     const allMembers = await Member.find({})
       .select("member_id name area status deactivated_at dateOfDeath")
       .sort("member_id");
@@ -2879,9 +2908,12 @@ exports.getMembersForCommonWorkDocument = async (req, res) => {
     }
 
     const membersForDocument = allMembers.map((member) => {
-      // Check if member is deactivated or deceased
+      // Check if member is deactivated or deceased.
+      // A dead member whose dependents continue the membership should NOT be treated as
+      // deceased for document purposes — show them with their real name/area rather than a
+      // blank row. continuingMemberIds (computed above) holds those member IDs.
       const isDeactivated = member.deactivated_at != null;
-      const isDeceased = member.dateOfDeath != null;
+      const isDeceased = member.dateOfDeath != null && !continuingMemberIds.includes(member.member_id);
 
       // Check if member is an officer
       const isOfficer = officerMemberIds.has(member.member_id);
