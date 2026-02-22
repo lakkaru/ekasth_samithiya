@@ -1,6 +1,6 @@
 import React from "react"
 import { Box, Typography, Button, Divider } from "@mui/material"
-import { Info as InfoIcon, FamilyRestroom as FamilyRestroomIcon, Stars as StarsIcon } from "@mui/icons-material"
+import { Info as InfoIcon, FamilyRestroom as FamilyRestroomIcon, Stars as StarsIcon, ListAlt as ListAltIcon, Checklist as ChecklistIcon } from "@mui/icons-material"
 
 const InformationMobileMenu = ({ isAuthenticated, onMenuItemClick }) => {
   if (!isAuthenticated) return null
@@ -50,6 +50,54 @@ const InformationMobileMenu = ({ isAuthenticated, onMenuItemClick }) => {
         }}
       >
         විශේෂ සාමාජිකත්ව
+      </Button>
+
+      <Button
+        color="inherit"
+        onClick={() => onMenuItemClick("/funeral/collectionList")}
+        startIcon={<ListAltIcon />}
+        sx={{
+          textTransform: "none",
+          width: "100%",
+          mb: 1,
+          justifyContent: "flex-start",
+          backgroundColor: "rgba(102, 126, 234, 0.15)",
+          border: "1px solid rgba(102, 126, 234, 0.2)",
+          "&:hover": {
+            backgroundColor: "rgba(102, 126, 234, 0.25)",
+            transform: "translateX(2px)",
+          },
+          borderRadius: 2,
+          py: 1.5,
+          color: "#333",
+          transition: "all 0.2s ease",
+        }}
+      >
+        අතිරේක ආධාර එකතු කිරීමේ ලැයිස්තුව
+      </Button>
+
+      <Button
+        color="inherit"
+        onClick={() => onMenuItemClick("/funeral/collectionMarking")}
+        startIcon={<ChecklistIcon />}
+        sx={{
+          textTransform: "none",
+          width: "100%",
+          mb: 1,
+          justifyContent: "flex-start",
+          backgroundColor: "rgba(102, 126, 234, 0.15)",
+          border: "1px solid rgba(102, 126, 234, 0.2)",
+          "&:hover": {
+            backgroundColor: "rgba(102, 126, 234, 0.25)",
+            transform: "translateX(2px)",
+          },
+          borderRadius: 2,
+          py: 1.5,
+          color: "#333",
+          transition: "all 0.2s ease",
+        }}
+      >
+        අතිරේක ආධාර සලකුණු කිරීමේ ලැයිස්තුව
       </Button>
 
       <Button

@@ -49,7 +49,7 @@ export default function CollectionMarking() {
   const [areas, setAreas] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [isViceSecretary, setIsViceSecretary] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   const [collectionData, setCollectionData] = useState({})
 
@@ -59,7 +59,7 @@ export default function CollectionMarking() {
 
   useEffect(() => { fetchAreas() }, [])
 
-  const handleAuthStateChange = authData => setIsViceSecretary(Boolean(authData?.roles?.includes("vice-secretary")))
+  const handleAuthStateChange = authData => setIsAuthenticated(Boolean(authData?.isAuthenticated))
 
   const fetchAreas = async () => {
     try {
@@ -139,11 +139,11 @@ export default function CollectionMarking() {
   for (let i = 0; i < members.length; i += rowsPerPage) pages.push(members.slice(i, i + rowsPerPage))
   if (pages.length === 0) pages.push([])
 
-  if (!isViceSecretary) return (
+  if (!isAuthenticated) return (
     <Layout>
       <AuthComponent onAuthStateChange={handleAuthStateChange} />
       <Container maxWidth="md" sx={{ mt: 4 }}>
-        <Alert severity="error">මෙම පිටුවට ප්‍රවේශය උප ලේකම්වරුන්ට පමණක් සීමා වේ</Alert>
+        <Alert severity="info">මෙම පිටුවට ප්‍රවේශ වීමට කරුණාකර ලොගින් වන්න</Alert>
       </Container>
     </Layout>
   )

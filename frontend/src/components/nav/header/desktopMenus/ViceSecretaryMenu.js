@@ -239,23 +239,6 @@ const ViceSecretaryMenu = ({ isViceSecretary }) => {
         >
           අවමංගල්‍ය පැවරීම
         </MenuItem>
-        <hr />
-        <MenuItem
-          onClick={() => {
-            navigate("/funeral/collectionList")
-            handleMembershipMenuClose()
-          }}
-        >
-          අතිරේක ආධාර එකතු කිරීමේ ලැයිස්තුව
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            navigate("/funeral/collectionMarking")
-            handleMembershipMenuClose()
-          }}
-        >
-          අතිරේක ආධාර සලකුණු කිරීමේ ලැයිස්තුව
-        </MenuItem>
         {/* <MenuItem
           onClick={() => {
             navigate("/funeral/extraDue")

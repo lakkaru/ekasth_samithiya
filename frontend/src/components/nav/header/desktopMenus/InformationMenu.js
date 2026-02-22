@@ -83,6 +83,22 @@ const InformationMenu = ({ isAuthenticated }) => {
         </MenuItem>
         <MenuItem
           onClick={() => {
+            navigate("/funeral/collectionList")
+            handleMenuClose()
+          }}
+        >
+          📋 අතිරේක ආධාර එකතු කිරීමේ ලැයිස්තුව
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            navigate("/funeral/collectionMarking")
+            handleMenuClose()
+          }}
+        >
+          ✅ අතිරේක ආධාර සලකුණු කිරීමේ ලැයිස්තුව
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
             navigate("/info/siblings")
             handleMenuClose()
           }}

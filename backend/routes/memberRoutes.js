@@ -123,11 +123,11 @@ router.get("/searchByArea", authMiddleware(["vice-secretary"]), searchMembersByA
 //search members by name
 router.get("/searchByName", authMiddleware(["vice-secretary"]), searchMembersByName);
 //get all areas
-router.get("/areas", authMiddleware(["vice-secretary"]), getAreas);
+router.get("/areas", authMiddleware(), getAreas);
 //get members for collection list
-router.get("/forCollection", authMiddleware(["vice-secretary"]), getMembersForCollection);
+router.get("/forCollection", authMiddleware(), getMembersForCollection);
 //get members for collection marking
-router.get("/forCollectionMarking", authMiddleware(["vice-secretary"]), getMembersForCollectionMarking);
+router.get("/forCollectionMarking", authMiddleware(), getMembersForCollectionMarking);
 // public free members list for landing page
 router.get("/freePublic", getMembersStatusPublic);
 //get all members with their due/remaining amounts

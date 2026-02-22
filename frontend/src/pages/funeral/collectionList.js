@@ -55,17 +55,17 @@ export default function CollectionList() {
   const [areas, setAreas] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [isViceSecretary, setIsViceSecretary] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
     fetchAreas()
   }, [])
 
   const handleAuthStateChange = (authData) => {
-    if (authData && authData.roles && authData.roles.includes("vice-secretary")) {
-      setIsViceSecretary(true)
+    if (authData && authData.isAuthenticated) {
+      setIsAuthenticated(true)
     } else {
-      setIsViceSecretary(false)
+      setIsAuthenticated(false)
     }
   }
 
@@ -217,13 +217,13 @@ export default function CollectionList() {
     )
   }
 
-  if (!isViceSecretary) {
+  if (!isAuthenticated) {
     return (
       <Layout>
         <AuthComponent onAuthStateChange={handleAuthStateChange} />
         <Container maxWidth="md" sx={{ mt: 4 }}>
-          <Alert severity="error">
-            මෙම පිටුවට ප්‍රවේශය උප ලේකම්වරුන්ට පමණක් සීමා වේ
+          <Alert severity="info">
+            මෙම පිටුවට ප්‍රවේශ වීමට කරුණාකර ලොගින් වන්න
           </Alert>
         </Container>
       </Layout>
