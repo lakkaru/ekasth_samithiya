@@ -404,15 +404,6 @@ const ViceSecretaryMenu = ({ isViceSecretary }) => {
         >
           නම අනුව සෙවීම
         </MenuItem>
-        <MenuItem
-          onClick={() => {
-            navigate("/member/special-memberships")
-            handleMembershipViceSecMenuClose()
-          }}
-        >
-          <GroupsIcon sx={{ mr: 1, fontSize: 20 }} />
-          විශේෂ සාමාජිකත්ව
-        </MenuItem>
       </Menu>
 
       <Divider

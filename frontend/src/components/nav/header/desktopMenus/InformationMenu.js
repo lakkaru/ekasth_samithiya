@@ -75,6 +75,14 @@ const InformationMenu = ({ isAuthenticated }) => {
         </Typography>
         <MenuItem
           onClick={() => {
+            navigate("/member/special-memberships")
+            handleMenuClose()
+          }}
+        >
+          ⭐ විශේෂ සාමාජිකත්ව
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
             navigate("/info/siblings")
             handleMenuClose()
           }}

@@ -475,25 +475,6 @@ export default function ViceSecretaryMobileMenu({ isViceSecretary, onMenuItemCli
         • නම අනුව සෙවීම
       </Button>
 
-      <Button
-        color="inherit"
-        onClick={() => onMenuItemClick("/member/special-memberships")}
-        sx={{
-          textTransform: "none",
-          width: "100%",
-          paddingLeft: "40px",
-          mb: 2,
-          justifyContent: 'flex-start',
-          backgroundColor: 'rgba(156, 39, 176, 0.05)',
-          '&:hover': { backgroundColor: 'rgba(156, 39, 176, 0.1)' },
-          borderRadius: 1,
-          py: 1,
-          color: '#555'
-        }}
-      >
-        • විශේෂ සාමාජිකත්ව
-      </Button>
-
       <Divider sx={{ my: 2, backgroundColor: 'rgba(102, 126, 234, 0.2)' }} />
     </Box>
   )
