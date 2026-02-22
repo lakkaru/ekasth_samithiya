@@ -19,9 +19,14 @@ import {
   Divider,
   Alert,
   CircularProgress,
+  Avatar,
+  Chip,
 } from "@mui/material"
 import {
   Print as PrintIcon,
+  PeopleAlt as PeopleAltIcon,
+  ListAlt as ListAltIcon,
+  LocationOn as LocationOnIcon,
 } from "@mui/icons-material"
 import Layout from "../../components/layout"
 import AuthComponent from "../../components/common/AuthComponent"
@@ -233,102 +238,185 @@ export default function CollectionList() {
   return (
     <Layout>
       <AuthComponent onAuthStateChange={handleAuthStateChange} />
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Container maxWidth="lg" sx={{ mt: 3, mb: 4 }}>
         {/* Screen Content */}
         <Box className="screen-content" sx={{ '@media print': { display: 'none' } }}>
-          <Typography variant="h4" sx={{ mb: 3, textAlign: 'center', fontWeight: 'bold', color: '#1976d2' }}>
-            අතිරේක ද්‍රව්‍ය එකතු කිරීමේ ලැයිස්තුව
-          </Typography>
 
-          <Paper sx={{ p: 3, mb: 3 }}>
-            <Grid container spacing={3}>
+          {/* Gradient Header */}
+          <Paper
+            elevation={3}
+            sx={{
+              p: { xs: 2, sm: 3 },
+              mb: 3,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              borderRadius: 3,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)', width: 52, height: 52 }}>
+                <ListAltIcon sx={{ fontSize: 30 }} />
+              </Avatar>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="h5" fontWeight="bold" sx={{ lineHeight: 1.2 }}>
+                  අතිරේක ආධාර එකතු කල යුතු සාමාජිකයන්
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.85, mt: 0.5 }}>
+                  ප්‍රදේශය අනුව සාමාජිකයන් ලැයිස්තුව
+                </Typography>
+              </Box>
+            </Box>
+            {members.length > 0 && (
+              <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                <Chip
+                  icon={<PeopleAltIcon />}
+                  label={`සාමාජිකයින් ${members.length} දෙනෙක්`}
+                  sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', fontWeight: 'bold', '& .MuiChip-icon': { color: 'white' } }}
+                />
+                <Chip
+                  icon={<LocationOnIcon />}
+                  label={selectedArea}
+                  sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', '& .MuiChip-icon': { color: 'white' } }}
+                />
+              </Box>
+            )}
+          </Paper>
+
+          {/* Area Selector */}
+          <Paper elevation={2} sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+            <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2, color: '#667eea' }}>
+              ප්‍රදේශය තෝරන්න
+            </Typography>
+            <Grid container spacing={2} alignItems="center">
               <Grid item xs={12} md={8}>
                 <FormControl fullWidth>
-                  <InputLabel>ප්‍රදේශය තෝරන්න</InputLabel>
+                  <InputLabel>ප්‍රදේශය</InputLabel>
                   <Select
                     value={selectedArea}
-                    label="ප්‍රදේශය තෝරන්න"
+                    label="ප්‍රදේශය"
                     onChange={(e) => setSelectedArea(e.target.value)}
+                    sx={{
+                      borderRadius: 2,
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#667eea' },
+                    }}
                   >
                     {areas.map((area) => (
-                      <MenuItem key={area} value={area}>
-                        {area}
-                      </MenuItem>
+                      <MenuItem key={area} value={area}>{area}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>
               </Grid>
-
               <Grid item xs={12} md={4}>
                 <Button
                   variant="contained"
                   onClick={fetchMembersForCollection}
                   disabled={!selectedArea || loading}
-                  sx={{ mr: 2, height: '56px' }}
                   fullWidth
+                  sx={{
+                    height: 56,
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    textTransform: 'none',
+                    fontWeight: 'bold',
+                    fontSize: '1rem',
+                    '&:hover': { background: 'linear-gradient(135deg, #5a6fd6 0%, #6a4293 100%)' },
+                  }}
                 >
-                  {loading ? <CircularProgress size={24} /> : 'ලැයිස්තුව ජනනය කරන්න'}
+                  {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'ලැයිස්තුව ජනනය කරන්න'}
                 </Button>
               </Grid>
-
-              {members.length > 0 && (
-                <Grid item xs={12}>
-                  <Button
-                    variant="contained"
-                    color="success"
-                    startIcon={<PrintIcon />}
-                    onClick={handlePrint}
-                    fullWidth
-                  >
-                    මුද්‍රණය කරන්න
-                  </Button>
-                </Grid>
-              )}
             </Grid>
           </Paper>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          )}
+          {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
 
+          {/* Members Table */}
           {members.length > 0 && (
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" sx={{ mb: 2 }}>
-                ප්‍රදර්ශන ලැයිස්තුව ({members.length} සාමාජිකයින්)
-              </Typography>
-              
+            <Paper elevation={2} sx={{ borderRadius: 2, overflow: 'hidden' }}>
+              <Box sx={{
+                px: 3, py: 2,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              }}>
+                <Typography variant="h6" fontWeight="bold" sx={{ color: 'white' }}>
+                  සාමාජිකයන් ලැයිස්තුව
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<PrintIcon />}
+                  onClick={handlePrint}
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 'bold',
+                    border: '1px solid rgba(255,255,255,0.4)',
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
+                  }}
+                >
+                  මුද්‍රණය කරන්න
+                </Button>
+              </Box>
+
               <TableContainer>
                 <Table size="small">
                   <TableHead>
-                    <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                      <TableCell sx={{ fontWeight: 'bold', width: '6%' }}>අංකය</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold', width: '14%' }}>සාමාජික අංකය</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold', width: '70%' }}>නම</TableCell>
+                    <TableRow sx={{ backgroundColor: 'rgba(102, 126, 234, 0.08)' }}>
+                      <TableCell sx={{ fontWeight: 'bold', width: 60, color: '#667eea' }}>#</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold', width: 110, color: '#667eea' }}>සා. අංකය</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold', color: '#667eea' }}>නම</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold', color: '#667eea' }}>තත්ත්වය</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {members.map((member, index) => {
                       const muted = member.isAreaAdmin || member.isOfficer || (member.status === 'free')
-                      let displayName = `${member.name || ''}`
-                      if (member.isAreaAdmin) displayName += ' - කාරක සභික'
-                      else if (member.status === 'free') displayName += ' - නිදහස්'
-                      else if (member.isOfficer) displayName += ' - නිලධාරී'
+                      let roleLabel = null
+                      if (member.isAreaAdmin) roleLabel = 'කාරක සභික'
+                      else if (member.status === 'free') roleLabel = 'නිදහස්'
+                      else if (member.isOfficer) roleLabel = 'නිලධාරී'
 
                       return (
-                        <TableRow key={member._id} sx={{ color: muted ? 'text.secondary' : 'inherit', opacity: muted ? 0.65 : 1 }}>
-                          <TableCell>{index + 1}</TableCell>
-                          <TableCell>{member.member_id}</TableCell>
-                          <TableCell>{displayName}</TableCell>
+                        <TableRow
+                          key={member._id}
+                          sx={{
+                            opacity: muted ? 0.6 : 1,
+                            backgroundColor: index % 2 === 0 ? 'rgba(102,126,234,0.03)' : 'white',
+                            '&:hover': { backgroundColor: 'rgba(102,126,234,0.08)' },
+                          }}
+                        >
+                          <TableCell>
+                            <Typography variant="body2" color="text.secondary">{index + 1}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={`#${member.member_id}`}
+                              size="small"
+                              sx={{ bgcolor: 'rgba(102,126,234,0.12)', color: '#667eea', fontWeight: 'bold', fontSize: '0.75rem' }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" fontWeight={muted ? 'normal' : 'medium'}>
+                              {member.name || ''}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            {roleLabel && (
+                              <Chip
+                                label={roleLabel}
+                                size="small"
+                                variant="outlined"
+                                sx={{ fontSize: '0.7rem', height: 20, borderColor: '#764ba2', color: '#764ba2' }}
+                              />
+                            )}
+                          </TableCell>
                         </TableRow>
                       )
                     })}
                   </TableBody>
                 </Table>
               </TableContainer>
-              
-              {/* removed "and X more" message — show full list on screen now */}
             </Paper>
           )}
         </Box>
