@@ -11,6 +11,7 @@ import LoanMenu from "./desktopMenus/LoanMenu"
 import ChairmanMenu from "./desktopMenus/ChairmanMenu"
 import AuditorMenu from "./desktopMenus/AuditorMenu"
 import SuperAdminMenu from "./desktopMenus/SuperAdminMenu"
+import InformationMenu from "./desktopMenus/InformationMenu"
 
 export default function DesktopButtons({
   isAuthenticated,
@@ -53,6 +54,9 @@ export default function DesktopButtons({
 
           {/* Auditor Menu */}
           <AuditorMenu isAuditor={isAuditor} />
+
+          {/* Information Menu - visible to all authenticated members */}
+          <InformationMenu isAuthenticated={isAuthenticated} />
 
           {/* User Account Menu - Hide for super admin */}
           {!isSuperAdmin && (

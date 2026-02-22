@@ -3016,3 +3016,62 @@ exports.getAllMembersDue = async (req, res) => {
         });
     }
 };
+
+// Get all active members who have at least one sibling in their dependent list
+exports.getMembersWithSiblings = async (req, res) => {
+    try {
+        const members = await Member.find({
+            siblingsCount: { $gt: 0 },
+            deactivated_at: null,
+        })
+            .populate("dependents", "name relationship dateOfDeath")
+            .select("member_id name area siblingsCount dependents")
+            .sort({ member_id: 1 });
+
+        // Build response: include only sibling-type dependents explicitly
+        // (those whose relationship suggests a sibling — case-insensitive check)
+        const siblingKeywords = [
+            "sibling", "brother", "sister",
+            "සහෝදරයා", "සහෝදරී", "සහෝදර",
+        ];
+
+        const result = members.map(m => {
+            const allDeps = m.dependents || [];
+            const siblings = allDeps.filter(d => {
+                if (!d || !d.relationship) return false;
+                const rel = d.relationship.toLowerCase();
+                return siblingKeywords.some(k => rel.includes(k.toLowerCase()));
+            });
+            // If no deps matched keyword filter, fall back to all living dependents
+            // (edge-case where siblingsCount > 0 but relationship spelling differs)
+            const displaySiblings =
+                siblings.length > 0
+                    ? siblings
+                    : allDeps.filter(d => !d.dateOfDeath);
+
+            return {
+                member_id: m.member_id,
+                name: m.name,
+                area: m.area,
+                siblingsCount: m.siblingsCount,
+                siblings: displaySiblings.map(s => ({
+                    name: s.name,
+                    relationship: s.relationship,
+                })),
+            };
+        }).filter(m => m.siblings.length > 0);
+
+        res.status(200).json({
+            success: true,
+            members: result,
+            count: result.length,
+        });
+    } catch (error) {
+        console.error("Error fetching members with siblings:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error fetching members with siblings.",
+            error: error.message,
+        });
+    }
+};

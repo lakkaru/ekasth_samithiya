@@ -27,6 +27,7 @@ import LoanMobileMenu from "./mobileMenus/LoanMobileMenu"
 import ChairmanMobileMenu from "./mobileMenus/ChairmanMobileMenu"
 import AuditorMobileMenu from "./mobileMenus/AuditorMobileMenu"
 import SuperAdminMobileMenu from "./mobileMenus/SuperAdminMobileMenu"
+import InformationMobileMenu from "./mobileMenus/InformationMobileMenu"
 
 export default function MobileMenuButtons({
   isAuthenticated,
@@ -130,6 +131,12 @@ export default function MobileMenuButtons({
                     {/* Auditor Menu */}
                     <AuditorMobileMenu
                       isAuditor={isAuditor}
+                      onMenuItemClick={handleMenuItemClick}
+                    />
+                    
+                    {/* Information Menu - visible to all authenticated members */}
+                    <InformationMobileMenu
+                      isAuthenticated={!isSuperAdmin}
                       onMenuItemClick={handleMenuItemClick}
                     />
                     

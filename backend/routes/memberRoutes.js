@@ -36,6 +36,7 @@ const {
   getMembersForCollectionMarking,
   getMembersStatusPublic,
   getAllMembersDue,
+  getMembersWithSiblings,
 } = require("../controllers/memberController");
 const authMiddleware = require("../middleware/authMiddleware");
 
@@ -131,5 +132,7 @@ router.get("/forCollectionMarking", authMiddleware(["vice-secretary"]), getMembe
 router.get("/freePublic", getMembersStatusPublic);
 //get all members with their due/remaining amounts
 router.get("/getAllMembersDue", authMiddleware(["vice-secretary", "treasurer"]), getAllMembersDue);
+// get all members that have siblings in their dependent list (available to all logged-in members)
+router.get("/withSiblings", authMiddleware(), getMembersWithSiblings);
 
 module.exports = router;
