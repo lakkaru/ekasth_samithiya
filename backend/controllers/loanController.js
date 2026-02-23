@@ -729,24 +729,19 @@ exports.getLoanById = async (req, res) => {
 // Get next available loan number
 exports.getNextLoanNumber = async (req, res) => {
   try {
-    // Find the loan with the highest loan number
-    const lastLoan = await Loan.findOne({})
-      .sort({ loanNumber: -1 })
-      .select('loanNumber');
-    
-    let nextLoanNumber = 1;
-    
-    if (lastLoan && lastLoan.loanNumber) {
-      // Convert to number and increment
-      const lastNumber = parseInt(lastLoan.loanNumber);
-      if (!isNaN(lastNumber)) {
-        nextLoanNumber = lastNumber + 1;
-      }
-    }
+    const currentYear = new Date().getFullYear().toString();
+
+    // Count loans created this year (loanNumber starts with current year)
+    const yearLoanCount = await Loan.countDocuments({
+      loanNumber: { $regex: `^${currentYear}` }
+    });
+
+    const nextCount = yearLoanCount + 1;
+    const nextLoanNumber = `${currentYear}${String(nextCount).padStart(2, '0')}`;
 
     res.status(200).json({
       success: true,
-      nextLoanNumber: nextLoanNumber.toString(),
+      nextLoanNumber,
       message: "ඊලග ණය අංකය සාර්ථකව ලබා ගන්නා ලදි"
     });
 
