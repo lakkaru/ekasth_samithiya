@@ -1864,37 +1864,12 @@ exports.getDueForMeetingSign = async (req, res) => {
     const currentYear = new Date().getFullYear();
     const currentMonth = new Date().getMonth(); // Months are 0-based in JS
 
-    // Get the last two meetings
-    const lastTwoMeetings = await Meeting.find()
-      .sort({ date: -1 })
-      .limit(2)
-      .select("absents date");
-
-    console.log("Last two meetings found:", lastTwoMeetings.length);
-    console.log("Meeting dates:", lastTwoMeetings.map(m => ({ date: m.date, absentsCount: m.absents?.length || 0 })));
-
-    // Find members who were absent in both meetings
-    // Note: Meeting.absents stores member_id (numeric), not MongoDB _id
-    let consecutiveAbsentMemberIds = [];
-    if (lastTwoMeetings.length === 2) {
-      const firstMeetingAbsents = lastTwoMeetings[0].absents.map(id => id.toString());
-      const secondMeetingAbsents = lastTwoMeetings[1].absents.map(id => id.toString());
-      consecutiveAbsentMemberIds = firstMeetingAbsents.filter(id => 
-        secondMeetingAbsents.includes(id)
-      );
-      console.log("First meeting absents:", firstMeetingAbsents.slice(0, 5), "... total:", firstMeetingAbsents.length);
-      console.log("Second meeting absents:", secondMeetingAbsents.slice(0, 5), "... total:", secondMeetingAbsents.length);
-      console.log("Consecutive absents found:", consecutiveAbsentMemberIds.length, "member IDs:", consecutiveAbsentMemberIds.slice(0, 10));
-    } else {
-      console.log("Not enough meetings to check consecutive absences");
-    }
-
     // Get all active members
     const members = await Member.find({
       status: { $ne: "free" }, // Exclude members with status 'free'
       deactivated_at: null, // Exclude deactivated members
     })
-      .select("_id member_id name due2023 fines status")
+      .select("_id member_id name due2023 fines status meetingAbsents")
       .sort("member_id");
 
     // Get membership payments for the current year
@@ -1960,8 +1935,8 @@ exports.getDueForMeetingSign = async (req, res) => {
       const totalDue =
         membershipDue + member.due2023 + totalFines - fineTotalPaid;
 
-      // Compare member_id (numeric) with consecutiveAbsentMemberIds (strings)
-      const hasAbsents = consecutiveAbsentMemberIds.includes(member.member_id.toString());
+      // Mark only members with exactly 2 consecutive meeting absences
+      const hasAbsents = member.meetingAbsents === 2;
       return {
         member_id: member.member_id,
         totalDue: totalDue, // Total amount due
