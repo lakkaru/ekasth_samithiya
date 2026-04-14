@@ -215,14 +215,14 @@ const CommonWorkAttendanceSheet = () => {
                   minHeight: '100vh',
                   boxShadow: 'none',
                   m: 0,
-                  p: '10mm',
+                  p: '2mm 3mm 2mm 0',
                   pageBreakAfter: pageIndex < pages.length - 1 ? 'always' : 'auto'
                 }
               }}
             >
               {/* Page Header */}
-              <Box sx={{ mb: 0.8, borderBottom: '2px solid #333', pb: 0.6 }}>
-                <Typography variant="h5" sx={{ fontWeight: 'bold', textAlign: 'center', mb: 0.8 }}>
+              <Box sx={{ mb: 0.3, borderBottom: '2px solid #333', pb: 0.3 }}>
+                <Typography variant="h5" sx={{ fontWeight: 'bold', textAlign: 'center', mb: 0.3, fontSize: '16px' }}>
                   පැමිණීම ලේඛණය
                 </Typography>
                 
@@ -252,13 +252,13 @@ const CommonWorkAttendanceSheet = () => {
               </Box>
 
               {/* Two Column Layout */}
-              <Box sx={{ 
+              <Box className="two-col-layout" sx={{ 
                 display: 'grid', 
                 gridTemplateColumns: '1fr 1fr', 
-                gap: 2,
+                gap: '4mm',
                 flex: 1,
-                alignItems: 'start',
-                minHeight: 0 // Allow content to shrink
+                alignItems: 'stretch',
+                minHeight: 0
               }}>
                 {[0, 1].map(columnIndex => {
                   const startIndex = Math.floor(page.members.length / 2) * columnIndex;
@@ -266,7 +266,7 @@ const CommonWorkAttendanceSheet = () => {
                   const columnMembers = page.members.slice(startIndex, endIndex);
                   
                   return (
-                    <Box key={columnIndex}>
+                    <Box key={columnIndex} className="col-wrapper" sx={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                       {/* Column Headers */}
                       <Box sx={{ 
                         display: 'grid', 
@@ -320,10 +320,13 @@ const CommonWorkAttendanceSheet = () => {
                       </Box>
 
                       {/* Column Data */}
-                      <Box sx={{ 
+                      <Box className="col-data" sx={{ 
                         display: 'grid', 
                         gridTemplateColumns: '45px 1fr 55px 50px',
-                        gap: 0
+                        gridAutoRows: '1fr',
+                        gap: 0,
+                        flex: 1,
+                        minHeight: 0
                       }}>
                         {columnMembers.map((member, memberIndex) => {
                           // Determine if member should be grayed out (only officers and status-based exemptions)
@@ -348,9 +351,8 @@ const CommonWorkAttendanceSheet = () => {
                                 border: '1px solid #333',
                                 borderTop: memberIndex === 0 ? '1px solid #333' : 'none',
                                 borderBottom: isLastRow ? '1px solid #333' : '1px solid #ccc',
-                                p: 0.3,
+                                p: '1px 3px',
                                 fontSize: '11px',
-                                minHeight: '20px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -364,9 +366,8 @@ const CommonWorkAttendanceSheet = () => {
                                 borderLeft: 'none',
                                 borderTop: memberIndex === 0 ? '1px solid #333' : 'none',
                                 borderBottom: isLastRow ? '1px solid #333' : '1px solid #ccc',
-                                p: 0.3,
-                                fontSize: '10px',
-                                minHeight: '20px',
+                                p: '1px 3px',
+                                fontSize: '11px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 ...rowStyle,
@@ -382,9 +383,8 @@ const CommonWorkAttendanceSheet = () => {
                                 borderLeft: 'none',
                                 borderTop: memberIndex === 0 ? '1px solid #333' : 'none',
                                 borderBottom: isLastRow ? '1px solid #333' : '1px solid #ccc',
-                                p: 0.3,
+                                p: '1px 3px',
                                 fontSize: '9px',
-                                minHeight: '20px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 ...rowStyle,
@@ -400,8 +400,7 @@ const CommonWorkAttendanceSheet = () => {
                                 borderLeft: 'none',
                                 borderTop: memberIndex === 0 ? '1px solid #333' : 'none',
                                 borderBottom: isLastRow ? '1px solid #333' : '1px solid #ccc',
-                                p: 0.3,
-                                minHeight: '20px',
+                                p: '1px 3px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -464,19 +463,24 @@ const CommonWorkAttendanceSheet = () => {
           /* Ensure each page fits properly */
           @page {
             size: A4 portrait;
-            margin: 8mm;
+            margin: 5mm 5mm 5mm 25mm;
           }
           
           /* Page break settings */
           .print-page {
             page-break-after: always;
             page-break-inside: avoid;
-            height: calc(100vh - 16mm);
-            max-height: calc(100vh - 16mm);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            box-sizing: border-box;
+            height: 100vh !important;
+            max-height: 100vh !important;
+            min-height: 100vh !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
+            padding: 2mm 3mm 2mm 0 !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
           }
           
           .print-page:last-child {
@@ -485,9 +489,34 @@ const CommonWorkAttendanceSheet = () => {
           
           /* Ensure content distribution */
           .print-page > div:last-child {
-            flex: 1;
-            min-height: 0;
-            overflow: hidden;
+            flex: 1 !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+          }
+          
+          /* Force two-column layout to fill remaining height */
+          .two-col-layout {
+            flex: 1 !important;
+            display: grid !important;
+            align-items: stretch !important;
+            min-height: 0 !important;
+          }
+          
+          /* Column wrappers stretch full height */
+          .col-wrapper {
+            display: flex !important;
+            flex-direction: column !important;
+            min-height: 0 !important;
+            height: 100% !important;
+          }
+          
+          /* Data grid fills remaining column space */
+          .col-data {
+            flex: 1 !important;
+            display: grid !important;
+            grid-auto-rows: 1fr !important;
+            min-height: 0 !important;
+            height: 100% !important;
           }
         }
         

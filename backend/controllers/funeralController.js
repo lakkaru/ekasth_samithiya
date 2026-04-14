@@ -15,9 +15,9 @@ exports.getLastAssignmentInfo = async (req, res) => {
     let lastAssignment = null;
     for (const funeral of funerals) {
       if (funeral.cemeteryAssignments && 
-          funeral.cemeteryAssignments.length >= 15 && 
-          funeral.cemeteryAssignments[14] && 
-          funeral.cemeteryAssignments[14].member_id) {
+          funeral.cemeteryAssignments.length >= 20 && 
+          funeral.cemeteryAssignments[19] && 
+          funeral.cemeteryAssignments[19].member_id) {
         lastAssignment = funeral;
         break;
       }
@@ -28,7 +28,7 @@ exports.getLastAssignmentInfo = async (req, res) => {
       return res.status(200).json({ lastMember_id: 0, removedMembers_ids: [] });
     }
     
-    const lastMember_id = lastAssignment.cemeteryAssignments[14].member_id;
+    const lastMember_id = lastAssignment.cemeteryAssignments[19].member_id;
     const removedMembers = lastAssignment.removedMembers || [];
     const removedMembers_ids = removedMembers.map((member) => member.member_id);
     

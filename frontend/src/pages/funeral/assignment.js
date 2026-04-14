@@ -964,7 +964,7 @@ export default function Assignment() {
               // Increase font size and improve Sinhala rendering for all table cells
               const allCells = table.querySelectorAll("th, td");
               allCells.forEach(cell => {
-                cell.style.fontSize = '20px';
+                cell.style.fontSize = '22px';
                 cell.style.fontFamily = "'Noto Sans Sinhala', Arial, sans-serif";
                 cell.style.fontWeight = '500';
                 cell.style.lineHeight = '1.4';
@@ -973,7 +973,7 @@ export default function Assignment() {
               // Increase font size for member IDs
               const memberIdCells = table.querySelectorAll("td:first-child");
               memberIdCells.forEach(cell => {
-                cell.style.fontSize = '24px'; // Match the size of special text
+                cell.style.fontSize = '22px'; // Match the size of special text
                 cell.style.fontWeight = 'bold';
               });
 
@@ -990,7 +990,7 @@ export default function Assignment() {
             const headings = clonedElement.querySelectorAll(".MuiTypography-root");
             headings.forEach(heading => {
               if (heading.textContent.includes("සුසාන භුමියේ කටයුතු") || heading.textContent.includes("දේහය ගෙනයාම")) {
-                heading.style.fontSize = '24px';
+                heading.style.fontSize = '28px';
                 heading.style.fontWeight = 'bold';
               }
             });
@@ -999,7 +999,7 @@ export default function Assignment() {
             const specialText = clonedElement.querySelectorAll(".MuiTypography-root, p, span");
             specialText.forEach(text => {
               if (text.textContent.includes("විශේෂයෙන් නිදහස් කල සාමාජිකයන්") || text.textContent.includes("සුසාන භුමි වැඩ වලින් නිදහස් සාමාජිකයන්")) {
-                text.style.fontSize = '24px';
+                text.style.fontSize = '28px';
                 text.style.fontWeight = 'bold';
               }
             });
@@ -1011,6 +1011,96 @@ export default function Assignment() {
               element.style.fontWeight = '500';
               element.style.lineHeight = '1.4';
             });
+
+            // === MERGE TWO TABLES INTO ONE BALANCED TABLE FOR PDF ===
+            // This ensures each row spans both columns so wrapping names never
+            // cause misalignment between the cemetery and funeral columns.
+            const allTables = clonedElement.querySelectorAll("table");
+            if (allTables.length >= 2) {
+              const cemeteryTable = allTables[0];
+              const funeralTable  = allTables[1];
+              const flexContainer = clonedElement.children[0]; // the side-by-side Box
+
+              const cRows = Array.from(cemeteryTable.querySelectorAll("tbody tr"));
+              const fRows = Array.from(funeralTable.querySelectorAll("tbody tr"));
+              const maxRows = Math.max(cRows.length, fRows.length);
+
+              const cs = [
+                'border:1px solid #000',
+                'padding:6px 8px',
+                'font-family:"Noto Sans Sinhala",Arial,sans-serif',
+                'font-size:22px',
+                'vertical-align:middle',
+                'word-break:break-word',
+                'white-space:normal',
+              ].join(';') + ';';
+
+              const hs = cs + 'font-weight:bold;text-align:center;background:#f0f0f0;font-size:22px;';
+              const dividerBorder = 'border-left:2px solid #000;';
+
+              let html = `
+                <table style="width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:8px;">
+                  <colgroup>
+                    <col style="width:11%">
+                    <col style="width:36%">
+                    <col style="width:3%">
+                    <col style="width:11%">
+                    <col style="width:36%">
+                    <col style="width:3%">
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th colspan="3" style="${hs}">සුසාන භුමියේ කටයුතු</th>
+                      <th colspan="3" style="${hs}${dividerBorder}">දේහය ගෙනයාම</th>
+                    </tr>
+                    <tr>
+                      <th style="${hs}">සා. අංකය</th>
+                      <th style="${hs}">නම</th>
+                      <th style="${hs}"></th>
+                      <th style="${hs}${dividerBorder}">සා. අංකය</th>
+                      <th style="${hs}">නම</th>
+                      <th style="${hs}"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+              `;
+
+              for (let i = 0; i < maxRows; i++) {
+                html += '<tr>';
+
+                if (i < cRows.length) {
+                  const cells = cRows[i].querySelectorAll("td");
+                  const memberId = cells[0] ? cells[0].textContent.trim() : '';
+                  const name     = cells[1] ? cells[1].textContent.trim() : '';
+                  html += `<td style="${cs}font-weight:bold;">${memberId}</td>`;
+                  html += `<td style="${cs}">${name}</td>`;
+                  html += `<td style="${cs}border-right:2px solid #000;"></td>`;
+                } else {
+                  html += `<td style="${cs}"></td><td style="${cs}"></td><td style="${cs}border-right:2px solid #000;"></td>`;
+                }
+
+                if (i < fRows.length) {
+                  const cells = fRows[i].querySelectorAll("td");
+                  const memberId = cells[0] ? cells[0].textContent.trim() : '';
+                  const name     = cells[1] ? cells[1].textContent.trim() : '';
+                  html += `<td style="${cs}font-weight:bold;${dividerBorder}">${memberId}</td>`;
+                  html += `<td style="${cs}">${name}</td>`;
+                  html += `<td style="${cs}"></td>`;
+                } else {
+                  html += `<td style="${cs}${dividerBorder}"></td><td style="${cs}"></td><td style="${cs}"></td>`;
+                }
+
+                html += '</tr>';
+              }
+
+              html += '</tbody></table>';
+
+              const wrapper = clonedDoc.createElement('div');
+              wrapper.innerHTML = html;
+              if (flexContainer && wrapper.firstElementChild) {
+                flexContainer.parentNode.replaceChild(wrapper.firstElementChild, flexContainer);
+              }
+            }
           }
         }
       });
@@ -1045,7 +1135,7 @@ export default function Assignment() {
       // Create a temporary div to render the heading and convert it to a canvas
       const headingDiv = document.createElement('div');
       // Use justify alignment for the heading
-      headingDiv.innerHTML = `<p style="font-family: 'Noto Sans Sinhala', Arial, sans-serif; text-align: justify; padding: 0; margin: 0; line-height: 1.6;">${headingText}</p>`;
+      headingDiv.innerHTML = `<p style="font-family: 'Noto Sans Sinhala', Arial, sans-serif; font-size: 18px; text-align: justify; padding: 0; margin: 0; line-height: 1.6;">${headingText}</p>`;
       headingDiv.style.width = `${contentWidth}mm`;
       headingDiv.style.position = 'absolute';
       headingDiv.style.left = '-9999px'; // Render off-screen
