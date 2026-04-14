@@ -727,9 +727,9 @@ export default function Assignment() {
 
     // Adjust text based on whether the deceased is a member or a dependent
     if (selectedDeceasedObj?.isMember) {
-      return `විල්බගෙදර එක්සත් අවමංගල්‍යධාර සමිතිය ${memberArea} පදිංචිව සිටි සාමාජික අංක ${memberId} දරණ ${deceasedName} මහතා අභාවය ${funeralDate} දින ${areaAdminInfo} ගේ ප්‍රධානත්වයෙන් ${areaAdminHelperInfo} ගේ සහයෝගිත්වයෙන්.`;
+      return `විල්බාගෙදර එක්සත් අවමංගල්‍යධාර සමිතිය ${memberArea} පදිංචිව සිටි සාමාජික අංක ${memberId} දරණ ${deceasedName} මහතා අභාවය ${funeralDate} දින ${areaAdminInfo} ගේ ප්‍රධානත්වයෙන් ${areaAdminHelperInfo} ගේ සහයෝගිත්වයෙන්.`;
     } else {
-      return `විල්බගෙදර එක්සත් අවමංගල්‍යධාර සමිතිය ${memberArea.replace("පදිංචිව සිටි", "පදිංචි")} පදිංචි සාමාජික අංක ${memberId} දරණ ${memberName} මහතාගේ ${relationship} වන ${deceasedName} ${genderTerm} අභාවය ${funeralDate} දින ${areaAdminInfo} ගේ ප්‍රධානත්වයෙන් ${areaAdminHelperInfo} ගේ සහයෝගිත්වයෙන්.`;
+      return `විල්බාගෙදර එක්සත් අවමංගල්‍යධාර සමිතිය ${memberArea.replace("පදිංචිව සිටි", "පදිංචි")} පදිංචි සාමාජික අංක ${memberId} දරණ ${memberName} මහතාගේ ${relationship} වන ${deceasedName} ${genderTerm} අභාවය ${funeralDate} දින ${areaAdminInfo} ගේ ප්‍රධානත්වයෙන් ${areaAdminHelperInfo} ගේ සහයෝගිත්වයෙන්.`;
     }
   }
 
@@ -964,7 +964,7 @@ export default function Assignment() {
               // Increase font size and improve Sinhala rendering for all table cells
               const allCells = table.querySelectorAll("th, td");
               allCells.forEach(cell => {
-                cell.style.fontSize = '22px';
+                cell.style.fontSize = '20px';
                 cell.style.fontFamily = "'Noto Sans Sinhala', Arial, sans-serif";
                 cell.style.fontWeight = '500';
                 cell.style.lineHeight = '1.4';
@@ -973,7 +973,7 @@ export default function Assignment() {
               // Increase font size for member IDs
               const memberIdCells = table.querySelectorAll("td:first-child");
               memberIdCells.forEach(cell => {
-                cell.style.fontSize = '22px'; // Match the size of special text
+                cell.style.fontSize = '24px'; // Match the size of special text
                 cell.style.fontWeight = 'bold';
               });
 
@@ -990,7 +990,7 @@ export default function Assignment() {
             const headings = clonedElement.querySelectorAll(".MuiTypography-root");
             headings.forEach(heading => {
               if (heading.textContent.includes("සුසාන භුමියේ කටයුතු") || heading.textContent.includes("දේහය ගෙනයාම")) {
-                heading.style.fontSize = '28px';
+                heading.style.fontSize = '24px';
                 heading.style.fontWeight = 'bold';
               }
             });
@@ -999,7 +999,7 @@ export default function Assignment() {
             const specialText = clonedElement.querySelectorAll(".MuiTypography-root, p, span");
             specialText.forEach(text => {
               if (text.textContent.includes("විශේෂයෙන් නිදහස් කල සාමාජිකයන්") || text.textContent.includes("සුසාන භුමි වැඩ වලින් නිදහස් සාමාජිකයන්")) {
-                text.style.fontSize = '28px';
+                text.style.fontSize = '24px';
                 text.style.fontWeight = 'bold';
               }
             });
@@ -1008,7 +1008,6 @@ export default function Assignment() {
             const allText = clonedElement.querySelectorAll("p, span, div, td, th");
             allText.forEach(element => {
               element.style.fontFamily = "'Noto Sans Sinhala', Arial, sans-serif";
-              element.style.fontWeight = '500';
               element.style.lineHeight = '1.4';
             });
 
@@ -1027,15 +1026,16 @@ export default function Assignment() {
 
               const cs = [
                 'border:1px solid #000',
-                'padding:6px 8px',
+                'padding:10px 9px',
                 'font-family:"Noto Sans Sinhala",Arial,sans-serif',
-                'font-size:22px',
+                'font-size:48px',
+                'font-weight:900',
                 'vertical-align:middle',
                 'word-break:break-word',
                 'white-space:normal',
               ].join(';') + ';';
 
-              const hs = cs + 'font-weight:bold;text-align:center;background:#f0f0f0;font-size:22px;';
+              const hs = cs + 'font-weight:bold;text-align:center;background:#f0f0f0;';
               const dividerBorder = 'border-left:2px solid #000;';
 
               let html = `
@@ -1072,7 +1072,7 @@ export default function Assignment() {
                   const cells = cRows[i].querySelectorAll("td");
                   const memberId = cells[0] ? cells[0].textContent.trim() : '';
                   const name     = cells[1] ? cells[1].textContent.trim() : '';
-                  html += `<td style="${cs}font-weight:bold;">${memberId}</td>`;
+                  html += `<td style="${cs}">${memberId}</td>`;
                   html += `<td style="${cs}">${name}</td>`;
                   html += `<td style="${cs}border-right:2px solid #000;"></td>`;
                 } else {
@@ -1083,7 +1083,7 @@ export default function Assignment() {
                   const cells = fRows[i].querySelectorAll("td");
                   const memberId = cells[0] ? cells[0].textContent.trim() : '';
                   const name     = cells[1] ? cells[1].textContent.trim() : '';
-                  html += `<td style="${cs}font-weight:bold;${dividerBorder}">${memberId}</td>`;
+                  html += `<td style="${cs}${dividerBorder}">${memberId}</td>`;
                   html += `<td style="${cs}">${name}</td>`;
                   html += `<td style="${cs}"></td>`;
                 } else {
@@ -1097,8 +1097,17 @@ export default function Assignment() {
 
               const wrapper = clonedDoc.createElement('div');
               wrapper.innerHTML = html;
-              if (flexContainer && wrapper.firstElementChild) {
-                flexContainer.parentNode.replaceChild(wrapper.firstElementChild, flexContainer);
+              const newTable = wrapper.firstElementChild;
+              if (flexContainer && newTable) {
+                flexContainer.parentNode.replaceChild(newTable, flexContainer);
+                // Force !important styles directly on cells after DOM insertion
+                // to guarantee they override any inherited CSS
+                newTable.querySelectorAll('td, th').forEach(cell => {
+                  cell.style.setProperty('font-size', '20px', 'important');
+                  cell.style.setProperty('font-weight', '500', 'important');
+                  cell.style.setProperty('font-family', '"Noto Sans Sinhala", Arial, sans-serif', 'important');
+                  cell.style.setProperty('line-height', '1.5', 'important');
+                });
               }
             }
           }
@@ -1135,7 +1144,7 @@ export default function Assignment() {
       // Create a temporary div to render the heading and convert it to a canvas
       const headingDiv = document.createElement('div');
       // Use justify alignment for the heading
-      headingDiv.innerHTML = `<p style="font-family: 'Noto Sans Sinhala', Arial, sans-serif; font-size: 18px; text-align: justify; padding: 0; margin: 0; line-height: 1.6;">${headingText}</p>`;
+      headingDiv.innerHTML = `<p style="font-family: 'Noto Sans Sinhala', Arial, sans-serif; font-size: 20px; text-align: justify; padding: 0; margin: 0; line-height: 1.6;">${headingText}</p>`;
       headingDiv.style.width = `${contentWidth}mm`;
       headingDiv.style.position = 'absolute';
       headingDiv.style.left = '-9999px'; // Render off-screen
@@ -1444,23 +1453,23 @@ export default function Assignment() {
               {/* released members */}
               <Box>
                 <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <Typography>විශේෂයෙන් නිදහස් කල සාමාජිකයන් :- </Typography>
+                  <Typography sx={{ fontSize: '1.1rem', fontWeight: 'bold' }}>විශේෂයෙන් නිදහස් කල සාමාජිකයන් :- </Typography>
                   <Box sx={{ display: "flex" }}>
                     {removedMembers.map((val, key) => {
                       return (
-                        <Typography key={key}>{val.member_id}, </Typography>
+                        <Typography sx={{ fontSize: '1.1rem', fontWeight: 'bold' }} key={key}>{val.member_id}, </Typography>
                       )
                     })}
                   </Box>
                 </Box>
                 <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <Typography>
+                  <Typography sx={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
                     සුසාන භුමි වැඩ වලින් නිදහස් සාමාජිකයන් : -{" "}
                   </Typography>
                   <Box sx={{ display: "flex" }}>
                     {releasedMembers.map((val, key) => {
                       return (
-                        <Typography key={key}>{val.member_id}, </Typography>
+                        <Typography sx={{ fontSize: '1.1rem', fontWeight: 'bold' }} key={key}>{val.member_id}, </Typography>
                       )
                     })}
                   </Box>
