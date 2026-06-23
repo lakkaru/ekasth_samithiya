@@ -719,7 +719,7 @@ export default function Assignment() {
 
     // Determine the appropriate gender term based on relationship
     let genderTerm = "මහත්මියගේ"; // Default for female
-    if (relationship === "සාමාජික" || relationship === "පුත්‍රයා" || relationship === "පියා") {
+    if (relationship === "සාමාජික" || relationship === "පුතා" || relationship === "පියා") {
       genderTerm = "මහතාගේ"; // Male
     } else if (relationship === "භාර්යාව" || relationship === "දුව" || relationship === "මව") {
       genderTerm = "මහත්මියගේ"; // Female
@@ -1144,7 +1144,7 @@ export default function Assignment() {
       // Create a temporary div to render the heading and convert it to a canvas
       const headingDiv = document.createElement('div');
       // Use justify alignment for the heading
-      headingDiv.innerHTML = `<p style="font-family: 'Noto Sans Sinhala', Arial, sans-serif; font-size: 20px; text-align: justify; padding: 0; margin: 0; line-height: 1.6;">${headingText}</p>`;
+      headingDiv.innerHTML = `<p style="font-family: 'Noto Sans Sinhala', Arial, sans-serif; font-size: 14px; text-align: justify; padding: 0; margin: 0; line-height: 1.3;">${headingText}</p>`;
       headingDiv.style.width = `${contentWidth}mm`;
       headingDiv.style.position = 'absolute';
       headingDiv.style.left = '-9999px'; // Render off-screen

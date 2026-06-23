@@ -84,7 +84,7 @@ const MeetingSignTable = ({ columnsArray, dataArray }) => {
                               alignItems: "center",
                               justifyContent: "center",
                               margin: "0 auto",
-                              fontSize: "0.78rem",
+                              fontSize: "1.2rem",
                               fontWeight: "bold",
                               lineHeight: 1,
                             }}
