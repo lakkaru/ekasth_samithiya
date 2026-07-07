@@ -15,7 +15,7 @@ import {
 } from "@mui/material"
 import Layout from "../../components/layout"
 
-import AttendanceChart from "../../components/common/AttendanceChart"
+import AttendanceChart from "../../components/common/attendanceChart"
 
 import { navigate } from "gatsby"
 import api from "../../utils/api"

@@ -25,14 +25,24 @@ exports.getLastAssignmentInfo = async (req, res) => {
     
     if (!lastAssignment) {
       // No funeral with assignments found, return defaults
-      return res.status(200).json({ lastMember_id: 0, removedMembers_ids: [] });
+      return res.status(200).json({ lastMember_id: 0, removedCemeteryMembers_ids: [], removedFuneralMembers_ids: [] });
     }
     
     const lastMember_id = lastAssignment.cemeteryAssignments[19].member_id;
-    const removedMembers = lastAssignment.removedMembers || [];
-    const removedMembers_ids = removedMembers.map((member) => member.member_id);
     
-    res.status(200).json({ lastMember_id, removedMembers_ids });
+    // Support both new split fields and old single field for backward compatibility
+    const removedCemeteryMembers = lastAssignment.removedCemeteryMembers || [];
+    const removedFuneralMembers = lastAssignment.removedFuneralMembers || [];
+    
+    // If new fields are empty but old field has data, treat old removedMembers as cemetery removals
+    const oldRemovedMembers = lastAssignment.removedMembers || [];
+    const finalCemeteryRemoved = removedCemeteryMembers.length > 0 ? removedCemeteryMembers : oldRemovedMembers;
+    const finalFuneralRemoved = removedFuneralMembers;
+    
+    const removedCemeteryMembers_ids = finalCemeteryRemoved.map((member) => member.member_id);
+    const removedFuneralMembers_ids = finalFuneralRemoved.map((member) => member.member_id);
+    
+    res.status(200).json({ lastMember_id, removedCemeteryMembers_ids, removedFuneralMembers_ids });
   } catch (error) {
     res
       .status(500)
@@ -48,7 +58,8 @@ exports.updateFuneralAssignments = async (req, res) => {
       date,
       cemeteryAssignments,
       funeralAssignments,
-      removedMembers,
+      removedCemeteryMembers,
+      removedFuneralMembers,
     } = req.body;
 
     // Validate funeral_id
@@ -66,7 +77,8 @@ exports.updateFuneralAssignments = async (req, res) => {
     const updateData = {
       cemeteryAssignments: cemeteryAssignments || [],
       funeralAssignments: funeralAssignments || [],
-      removedMembers: removedMembers || [],
+      removedCemeteryMembers: removedCemeteryMembers || [],
+      removedFuneralMembers: removedFuneralMembers || [],
     };
 
     // Update date if provided
@@ -100,7 +112,8 @@ exports.createFuneral = async (req, res) => {
       deceased_id,
       cemeteryAssignments,
       funeralAssignments,
-      removedMembers,
+      removedCemeteryMembers,
+      removedFuneralMembers,
     } = req.body;
 
     // Assign member_id to deceased_id if deceased_id is "member"
@@ -115,7 +128,8 @@ exports.createFuneral = async (req, res) => {
       deceased_id,
       cemeteryAssignments,
       funeralAssignments,
-      removedMembers,
+      removedCemeteryMembers,
+      removedFuneralMembers,
     });
 
     const savedFuneral = await newFuneral.save();
@@ -198,7 +212,14 @@ exports.updateFuneralAbsents = async (req, res) => {
     // Extract member_id from assignment objects
     const cemeteryAssignedIds = (currentFuneral.cemeteryAssignments || []).map(assignment => assignment.member_id);
     const funeralAssignedIds = (currentFuneral.funeralAssignments || []).map(assignment => assignment.member_id);
-    const removedMemberIds = (currentFuneral.removedMembers || []).map(member => member.member_id);
+    const removedCemeteryMemberIds = (currentFuneral.removedCemeteryMembers || []).map(member => member.member_id);
+    const removedFuneralMemberIds = (currentFuneral.removedFuneralMembers || []).map(member => member.member_id);
+    // Combine both for backward compatibility (also include old removedMembers)
+    const removedMemberIds = [
+      ...removedCemeteryMemberIds,
+      ...removedFuneralMemberIds,
+      ...(currentFuneral.removedMembers || []).map(member => member.member_id)
+    ];
     
     // Get members with 'free' and 'attendance-free' status (they shouldn't get fines)
     const membersWithFreeStatus = await Member.find({

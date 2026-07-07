@@ -3,7 +3,12 @@ import { navigate } from "gatsby";
 
 // Create Axios instance
 // Prefer the Gatsby env var (used across the frontend). Fall back to REACT_APP if present.
-const API_BASE = process.env.GATSBY_API_BASE_URL || process.env.REACT_APP_API_BASE_URL || "";
+// During development, default to the local backend port so requests don't become
+// relative to the frontend origin when the env var is missing.
+const API_BASE =
+  process.env.GATSBY_API_BASE_URL ||
+  process.env.REACT_APP_API_BASE_URL ||
+  "http://localhost:3001";
 const api = axios.create({
   baseURL: API_BASE, // Set your API base URL
 });

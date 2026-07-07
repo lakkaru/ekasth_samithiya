@@ -5,8 +5,6 @@ import DownloadIcon from '@mui/icons-material/Download';
 import { navigate } from "gatsby"
 import api from '../../utils/api'
 
-const baseUrl = process.env.GATSBY_API_BASE_URL
-
 export default function UserLogin() {
   const [member_id, setMember_id] = useState("")
   const [password, setPassword] = useState("")
@@ -29,7 +27,7 @@ export default function UserLogin() {
     setError("") // Clear any existing errors
 
     try {
-      const response = await api.post(`${baseUrl}/auth/login`, credentials)
+      const response = await api.post(`/auth/login`, credentials)
       
       // Store the token
       localStorage.setItem("authToken", response.data.token)

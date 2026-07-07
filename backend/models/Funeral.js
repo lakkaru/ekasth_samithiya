@@ -29,6 +29,14 @@ const FuneralSchema = new mongoose.Schema(
       type: Array,
       default: []
     },
+    removedCemeteryMembers: {
+      type: Array,
+      default: []
+    },
+    removedFuneralMembers: {
+      type: Array,
+      default: []
+    },
     assignmentAbsents: {
       type: Array,
       default: []

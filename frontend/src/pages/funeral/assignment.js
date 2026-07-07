@@ -49,7 +49,8 @@ export default function Assignment() {
   const [member, setMember] = useState({})
   const [deceasedOptions, setDeceasedOptions] = useState([])
   const [selectedDeceased, setSelectedDeceased] = useState("")
-  const [removedMembers, setRemovedMembers] = useState([]) // Track removed members
+  const [removedCemeteryMembers, setRemovedCemeteryMembers] = useState([]) // Track members removed from cemetery work
+  const [removedFuneralMembers, setRemovedFuneralMembers] = useState([]) // Track members removed from funeral work
   const [releasedMembers, setReleasedMembers] = useState([]) // Track members with status 'free' or 'convenient'
   const [selectedDate, setSelectedDate] = useState(dayjs())
   const [areaAdminInfo, setAreaAdminInfo] = useState("") // Store area admin info for preview
@@ -122,7 +123,8 @@ export default function Assignment() {
       setSelectedDeceased("")
       setCemeteryAssignments([])
       setFuneralAssignments([])
-      setRemovedMembers([])
+      setRemovedCemeteryMembers([])
+      setRemovedFuneralMembers([])
       setReleasedMembers([])
       setAreaAdminInfo("")
       setAreaAdminHelperInfo("")
@@ -189,7 +191,8 @@ export default function Assignment() {
       setHasExistingAssignments(hasAssignments)
       setCemeteryAssignments(funeral.cemeteryAssignments || [])
       setFuneralAssignments(funeral.funeralAssignments || [])
-      setRemovedMembers(funeral.removedMembers || [])
+      setRemovedCemeteryMembers(funeral.removedCemeteryMembers || [])
+      setRemovedFuneralMembers(funeral.removedFuneralMembers || [])
       
       // If funeral has no assignments, mark as not using existing (so assignments can be generated)
       if (!hasAssignments) {
@@ -289,7 +292,8 @@ export default function Assignment() {
     const fetchData = async () => {
       try {
         let lastAssignedMember_id = 0
-        let lastRemovedMember_ids = []
+        let lastRemovedCemeteryMember_ids = []
+        let lastRemovedFuneralMember_ids = []
         let allMembers = []
         let allAdmins = []
 
@@ -299,15 +303,15 @@ export default function Assignment() {
             .get(`${baseUrl}/funeral/getLastAssignmentInfo`)
             .then(response => {
               lastAssignedMember_id = response.data.lastMember_id || 0
-              lastRemovedMember_ids = response.data.removedMembers_ids || []
-              // console.log("Last Member ID:", lastAssignedMember_id)
-              // console.log("removedMembers:", lastRemovedMember_ids)}
+              lastRemovedCemeteryMember_ids = response.data.removedCemeteryMembers_ids || []
+              lastRemovedFuneralMember_ids = response.data.removedFuneralMembers_ids || []
             })
             .catch(error => {
               console.error("Error getting last assignment id:", error)
               // Set defaults if error
               lastAssignedMember_id = 0
-              lastRemovedMember_ids = []
+              lastRemovedCemeteryMember_ids = []
+              lastRemovedFuneralMember_ids = []
             })
         }
 
@@ -474,10 +478,16 @@ export default function Assignment() {
             return
           }
 
-          // First, collect removed members from last funeral that are in eligible pool
-          const removedMembersToInclude = eligibleMembers.filter(m => 
-            lastRemovedMember_ids.includes(m.member_id)
+          // Collect removed members from last funeral that are in eligible pool (split by type)
+          const removedCemeteryToInclude = eligibleMembers.filter(m => 
+            lastRemovedCemeteryMember_ids.includes(m.member_id)
           )
+          const removedFuneralToInclude = eligibleMembers.filter(m => 
+            lastRemovedFuneralMember_ids.includes(m.member_id)
+          )
+          
+          // Combined list for exclusion when picking new members
+          const allRemovedIds = [...lastRemovedCemeteryMember_ids, ...lastRemovedFuneralMember_ids]
           
           // Find starting index in the full eligibleMembers array (for non-removed members)
           let startIndex = 0
@@ -496,9 +506,12 @@ export default function Assignment() {
             }
           }
           
-          // Calculate how many additional members we need (40 total minus removed members)
-          const membersNeeded = 40
-          const additionalMembersNeeded = Math.max(0, membersNeeded - removedMembersToInclude.length)
+          // Calculate how many additional members we need
+          const cemeteryNeeded = 20
+          const funeralNeeded = 20
+          const additionalCemeteryNeeded = Math.max(0, cemeteryNeeded - removedCemeteryToInclude.length)
+          const additionalFuneralNeeded = Math.max(0, funeralNeeded - removedFuneralToInclude.length)
+          const totalAdditionalNeeded = additionalCemeteryNeeded + additionalFuneralNeeded
           
           // Create a circular array to get additional members, wrapping around when reaching the end
           const additionalMembers = []
@@ -506,28 +519,32 @@ export default function Assignment() {
           // Use modulo to wrap around the entire eligibleMembers array
           let added = 0
           let i = 0
-          while (added < additionalMembersNeeded && i < eligibleMembers.length) {
+          while (added < totalAdditionalNeeded && i < eligibleMembers.length) {
             const index = (startIndex + i) % eligibleMembers.length
             const candidate = eligibleMembers[index]
             
-            // Only add if not already in removed members list
-            if (!lastRemovedMember_ids.includes(candidate.member_id)) {
+            // Only add if not already in any removed members list
+            if (!allRemovedIds.includes(candidate.member_id)) {
               additionalMembers.push(candidate)
               added++
             }
             i++
           }
 
-          // Combine: removed members first, then additional members
-          const assignedMembers = [...removedMembersToInclude, ...additionalMembers]
+          // Build cemetery assignments: removed cemetery members first, then fill from additional
+          const cemeteryList = [...removedCemeteryToInclude, ...additionalMembers.slice(0, additionalCemeteryNeeded)]
+          // Build funeral assignments: removed funeral members first, then fill from remaining additional
+          const funeralList = [...removedFuneralToInclude, ...additionalMembers.slice(additionalCemeteryNeeded)]
+
+          const assignedMembers = [...cemeteryList, ...funeralList]
 
           // Set the next index for when members are removed
           setNextMemberIndex((startIndex + i) % eligibleMembers.length)
 
           // console.log('assignedMembers: ', assignedMembers)
           setAllMembers(assignedMembers)
-          setCemeteryAssignments(assignedMembers.slice(0, 20)) // Assign first 20 to cemetery
-          setFuneralAssignments(assignedMembers.slice(20, 40)) // Assign next 20 to funeral
+          setCemeteryAssignments(cemeteryList) // Cemetery: removed cemetery members + additional
+          setFuneralAssignments(funeralList) // Funeral: removed funeral members + additional
 
           // Separate out 'free' or 'convenient' members within the assignment range
           if (assignedMembers.length > 0) {
@@ -745,7 +762,8 @@ export default function Assignment() {
       const isAlreadyAssigned = 
         cemeteryAssignments.some(m => m._id === candidate._id) ||
         funeralAssignments.some(m => m._id === candidate._id) ||
-        removedMembers.some(m => m._id === candidate._id)
+        removedCemeteryMembers.some(m => m._id === candidate._id) ||
+        removedFuneralMembers.some(m => m._id === candidate._id)
       
       if (!isAlreadyAssigned) {
         // Update the index for next time
@@ -764,7 +782,7 @@ export default function Assignment() {
     if (type === "cemetery") {
       const updatedDiggers = [...cemeteryAssignments]
       const removedMember = updatedDiggers.splice(index, 1)[0]
-      setRemovedMembers([...removedMembers, removedMember])
+      setRemovedCemeteryMembers([...removedCemeteryMembers, removedMember])
 
       // Move top member from parade to diggers
       const updatedParade = [...funeralAssignments]
@@ -782,7 +800,7 @@ export default function Assignment() {
     } else if (type === "parade") {
       const updatedParade = [...funeralAssignments]
       const removedMember = updatedParade.splice(index, 1)[0]
-      setRemovedMembers([...removedMembers, removedMember])
+      setRemovedFuneralMembers([...removedFuneralMembers, removedMember])
 
       // Add new member to parade
       const nextMember = getNextMember()
@@ -859,7 +877,8 @@ export default function Assignment() {
     }))
 
   const saveDuties = async () => {
-    console.log("removed: ", removedMembers)
+    console.log("removedCemetery: ", removedCemeteryMembers)
+    console.log("removedFuneral: ", removedFuneralMembers)
     
     const assignmentData = {
       date: selectedDate.format("YYYY-MM-DD"),
@@ -873,7 +892,12 @@ export default function Assignment() {
         member_id: member.member_id,
         name: member.name,
       })),
-      removedMembers: removedMembers.map(member => ({
+      removedCemeteryMembers: removedCemeteryMembers.map(member => ({
+        _id: member._id,
+        member_id: member.member_id,
+        name: member.name,
+      })),
+      removedFuneralMembers: removedFuneralMembers.map(member => ({
         _id: member._id,
         member_id: member.member_id,
         name: member.name,
@@ -1453,9 +1477,19 @@ export default function Assignment() {
               {/* released members */}
               <Box>
                 <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <Typography sx={{ fontSize: '1.1rem', fontWeight: 'bold' }}>විශේෂයෙන් නිදහස් කල සාමාජිකයන් :- </Typography>
+                  <Typography sx={{ fontSize: '1.1rem', fontWeight: 'bold' }}>සුසාන භුමි වැඩ වලින් ඉවත් කල සාමාජිකයන් :- </Typography>
                   <Box sx={{ display: "flex" }}>
-                    {removedMembers.map((val, key) => {
+                    {removedCemeteryMembers.map((val, key) => {
+                      return (
+                        <Typography sx={{ fontSize: '1.1rem', fontWeight: 'bold' }} key={key}>{val.member_id}, </Typography>
+                      )
+                    })}
+                  </Box>
+                </Box>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Typography sx={{ fontSize: '1.1rem', fontWeight: 'bold' }}>දේහය ගෙනයාමෙන් ඉවත් කල සාමාජිකයන් :- </Typography>
+                  <Box sx={{ display: "flex" }}>
+                    {removedFuneralMembers.map((val, key) => {
                       return (
                         <Typography sx={{ fontSize: '1.1rem', fontWeight: 'bold' }} key={key}>{val.member_id}, </Typography>
                       )
