@@ -318,7 +318,7 @@ const FuneralAttendanceSheet = () => {
                       </Box>
                       <Box sx={{ textAlign: 'right' }}>
                         <Typography variant="body2" sx={{ fontSize: '11px' }}>
-                          <strong>දිනය:</strong> _____ / {formatDate(selectedFuneral.date).split(' ').slice(1).join(' ')}
+                          <strong>දිනය:</strong> {formatDate(selectedFuneral.date)}
                         </Typography>
                       </Box>
                     </Box>
