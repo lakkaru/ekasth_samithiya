@@ -247,7 +247,7 @@ exports.updateFuneralAbsents = async (req, res) => {
       if (adminStructure.areaAdmins && deceasedMemberArea) {
         adminStructure.areaAdmins.forEach(areaAdmin => {
           // Only exclude area admin and helpers if they are from the same area as deceased member
-          if (areaAdmin.area === deceasedMemberArea) {
+          if (deceasedMemberArea.startsWith(areaAdmin.area)) {
             if (areaAdmin.memberId) officerMemberIds.push(areaAdmin.memberId);
             if (areaAdmin.helper1?.memberId) officerMemberIds.push(areaAdmin.helper1.memberId);
             if (areaAdmin.helper2?.memberId) officerMemberIds.push(areaAdmin.helper2.memberId);

@@ -225,7 +225,7 @@ export default function Assignment() {
         const adminData = adminResponse.data
         
         if (adminData && adminData.admin) {
-          const areaAdmin = adminData.admin.areaAdmins?.find(admin => admin.area === area)
+          const areaAdmin = adminData.admin.areaAdmins?.find(admin => area.startsWith(admin.area))
           if (areaAdmin) {
             setAreaAdminInfo(`(${areaAdmin.memberId}) ${areaAdmin.name}`)
             
@@ -350,7 +350,7 @@ export default function Assignment() {
               
               // Only add area admins and helpers from the deceased member's area
               if (member.area) {
-                const memberAreaAdmin = admin.areaAdmins?.find(areaAdmin => areaAdmin.area === member.area)
+                const memberAreaAdmin = admin.areaAdmins?.find(areaAdmin => member.area.startsWith(areaAdmin.area))
                 if (memberAreaAdmin) {
                   if (memberAreaAdmin.memberId) allAdmins.push(memberAreaAdmin.memberId)
                   if (memberAreaAdmin.helper1?.memberId) allAdmins.push(memberAreaAdmin.helper1.memberId)
@@ -669,7 +669,7 @@ export default function Assignment() {
         
         if (adminData && adminData.admin) {
           // Find the area admin that matches the member's area
-          const areaAdmin = adminData.admin.areaAdmins?.find(admin => admin.area === member.area)
+          const areaAdmin = adminData.admin.areaAdmins?.find(admin => member.area.startsWith(admin.area))
           console.log('areaAdmin:', areaAdmin)
           if (areaAdmin) {
             // Set area admin info (member ID and name)
