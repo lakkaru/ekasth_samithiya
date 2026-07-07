@@ -742,11 +742,13 @@ export default function Assignment() {
       genderTerm = "මහත්මියගේ"; // Female
     }
 
+    const helperText = areaAdminHelperInfo ? ` ${areaAdminHelperInfo} ගේ සහයෝගිත්වයෙන්` : "";
+
     // Adjust text based on whether the deceased is a member or a dependent
     if (selectedDeceasedObj?.isMember) {
-      return `විල්බාගෙදර එක්සත් අවමංගල්‍යධාර සමිතිය ${memberArea} පදිංචිව සිටි සාමාජික අංක ${memberId} දරණ ${deceasedName} මහතා අභාවය ${funeralDate} දින ${areaAdminInfo} ගේ ප්‍රධානත්වයෙන් ${areaAdminHelperInfo} ගේ සහයෝගිත්වයෙන්.`;
+      return `විල්බාගෙදර එක්සත් අවමංගල්‍යධාර සමිතිය ${memberArea} පදිංචිව සිටි සාමාජික අංක ${memberId} දරණ ${deceasedName} මහතා අභාවය ${funeralDate} දින ${areaAdminInfo} ගේ ප්‍රධානත්වයෙන්${helperText}.`;
     } else {
-      return `විල්බාගෙදර එක්සත් අවමංගල්‍යධාර සමිතිය ${memberArea.replace("පදිංචිව සිටි", "පදිංචි")} පදිංචි සාමාජික අංක ${memberId} දරණ ${memberName} මහතාගේ ${relationship} වන ${deceasedName} ${genderTerm} අභාවය ${funeralDate} දින ${areaAdminInfo} ගේ ප්‍රධානත්වයෙන් ${areaAdminHelperInfo} ගේ සහයෝගිත්වයෙන්.`;
+      return `විල්බාගෙදර එක්සත් අවමංගල්‍යධාර සමිතිය ${memberArea.replace("පදිංචිව සිටි", "පදිංචි")} පදිංචි සාමාජික අංක ${memberId} දරණ ${memberName} මහතාගේ ${relationship} වන ${deceasedName} ${genderTerm} අභාවය ${funeralDate} දින ${areaAdminInfo} ගේ ප්‍රධානත්වයෙන්${helperText}.`;
     }
   }
 
@@ -1019,11 +1021,15 @@ export default function Assignment() {
               }
             });
 
-            // Increase font size for special text
+            // Set smaller font size for released/removed member lines to fit A4
             const specialText = clonedElement.querySelectorAll(".MuiTypography-root, p, span");
             specialText.forEach(text => {
-              if (text.textContent.includes("විශේෂයෙන් නිදහස් කල සාමාජිකයන්") || text.textContent.includes("සුසාන භුමි වැඩ වලින් නිදහස් සාමාජිකයන්")) {
-                text.style.fontSize = '24px';
+              if (
+                text.textContent.includes("සුසාන භුමි වැඩ වලින් ඉවත් කල සාමාජිකයන්") ||
+                text.textContent.includes("දේහය ගෙනයාමෙන් ඉවත් කල සාමාජිකයන්") ||
+                text.textContent.includes("සුසාන භුමි වැඩ වලින් නිදහස් සාමාජිකයන්")
+              ) {
+                text.style.fontSize = '16px';
                 text.style.fontWeight = 'bold';
               }
             });
@@ -1477,33 +1483,33 @@ export default function Assignment() {
               {/* released members */}
               <Box>
                 <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <Typography sx={{ fontSize: '1.1rem', fontWeight: 'bold' }}>සුසාන භුමි වැඩ වලින් ඉවත් කල සාමාජිකයන් :- </Typography>
+                  <Typography sx={{ fontSize: '0.9rem', fontWeight: 'bold' }}>සුසාන භුමි වැඩ වලින් ඉවත් කල සාමාජිකයන් :- </Typography>
                   <Box sx={{ display: "flex" }}>
                     {removedCemeteryMembers.map((val, key) => {
                       return (
-                        <Typography sx={{ fontSize: '1.1rem', fontWeight: 'bold' }} key={key}>{val.member_id}, </Typography>
+                        <Typography sx={{ fontSize: '0.9rem', fontWeight: 'bold' }} key={key}>{val.member_id}, </Typography>
                       )
                     })}
                   </Box>
                 </Box>
                 <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <Typography sx={{ fontSize: '1.1rem', fontWeight: 'bold' }}>දේහය ගෙනයාමෙන් ඉවත් කල සාමාජිකයන් :- </Typography>
+                  <Typography sx={{ fontSize: '0.9rem', fontWeight: 'bold' }}>දේහය ගෙනයාමෙන් ඉවත් කල සාමාජිකයන් :- </Typography>
                   <Box sx={{ display: "flex" }}>
                     {removedFuneralMembers.map((val, key) => {
                       return (
-                        <Typography sx={{ fontSize: '1.1rem', fontWeight: 'bold' }} key={key}>{val.member_id}, </Typography>
+                        <Typography sx={{ fontSize: '0.9rem', fontWeight: 'bold' }} key={key}>{val.member_id}, </Typography>
                       )
                     })}
                   </Box>
                 </Box>
                 <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <Typography sx={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
+                  <Typography sx={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
                     සුසාන භුමි වැඩ වලින් නිදහස් සාමාජිකයන් : -{" "}
                   </Typography>
                   <Box sx={{ display: "flex" }}>
                     {releasedMembers.map((val, key) => {
                       return (
-                        <Typography sx={{ fontSize: '1.1rem', fontWeight: 'bold' }} key={key}>{val.member_id}, </Typography>
+                        <Typography sx={{ fontSize: '0.9rem', fontWeight: 'bold' }} key={key}>{val.member_id}, </Typography>
                       )
                     })}
                   </Box>
