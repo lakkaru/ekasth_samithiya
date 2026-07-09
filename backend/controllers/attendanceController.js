@@ -98,10 +98,12 @@ async function applyFines(updatedMembers, meetingId) {
 async function recalculateAttendanceForMembers(memberIds, currentMeetingId) {
   if (!memberIds || memberIds.length === 0) return;
 
+  const numericMemberIds = memberIds.map(Number);
+
   // Ensure affected members have proper fines arrays
   await Member.updateMany(
     { 
-      member_id: { $in: memberIds },
+      member_id: { $in: numericMemberIds },
       $or: [
         { fines: { $exists: false } },
         { fines: null },
@@ -114,7 +116,7 @@ async function recalculateAttendanceForMembers(memberIds, currentMeetingId) {
   // Remove all meeting-related fines for affected members only
   await Member.updateMany(
     { 
-      member_id: { $in: memberIds },
+      member_id: { $in: numericMemberIds },
       fines: { $exists: true, $type: "array" } 
     },
     {
@@ -128,7 +130,7 @@ async function recalculateAttendanceForMembers(memberIds, currentMeetingId) {
 
   // Reset meetingAbsents for affected members only
   await Member.updateMany(
-    { member_id: { $in: memberIds } },
+    { member_id: { $in: numericMemberIds } },
     { meetingAbsents: 0 }
   );
 
@@ -137,10 +139,12 @@ async function recalculateAttendanceForMembers(memberIds, currentMeetingId) {
 
   // Recalculate attendance for affected members only
   for (const meeting of allMeetings) {
-    if (meeting.absents && meeting.absents.length > 0) {
+    const meetingAbsentsNumeric = (meeting.absents || []).map(Number);
+
+    if (meetingAbsentsNumeric.length > 0) {
       // Only process affected members who were absent in this meeting
-      const affectedAbsentMembers = meeting.absents.filter(memberId => 
-        memberIds.includes(memberId)
+      const affectedAbsentMembers = meetingAbsentsNumeric.filter(memberId => 
+        numericMemberIds.includes(memberId)
       );
 
       for (const member_id of affectedAbsentMembers) {
@@ -174,8 +178,8 @@ async function recalculateAttendanceForMembers(memberIds, currentMeetingId) {
     }
 
     // Reset meetingAbsents for affected members who were present in this meeting
-    const affectedPresentMembers = memberIds.filter(memberId => 
-      !meeting.absents.includes(memberId)
+    const affectedPresentMembers = numericMemberIds.filter(memberId => 
+      !meetingAbsentsNumeric.includes(memberId)
     );
 
     for (const member_id of affectedPresentMembers) {
@@ -341,7 +345,8 @@ exports.getMeetingByDate = async (req, res) => {
 
 exports.saveAttendance = async (req, res) => {
   try {
-    const { date, absentArray } = req.body.absentData;
+    const { date, absentArray: rawAbsentArray } = req.body.absentData;
+    const absentArray = (rawAbsentArray || []).map(Number);
 
     // Ensure all members have proper fines array initialized before any operations
     await Member.updateMany(
@@ -374,7 +379,7 @@ exports.saveAttendance = async (req, res) => {
     
     if (existingMeeting) {
       // Get the old absent array to determine which members' attendance changed
-      const oldAbsentArray = existingMeeting.absents || [];
+      const oldAbsentArray = (existingMeeting.absents || []).map(Number);
       
       // Update existing meeting
       existingMeeting.absents = absentArray;
