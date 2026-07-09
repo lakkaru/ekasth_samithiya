@@ -74,13 +74,24 @@ export default function MeetingAttendance() {
 
   return (
     <Layout>
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer component={Paper} sx={{ maxHeight: "70vh", maxWidth: "100%", overflow: "auto" }}>
+        <Table stickyHeader>
           <TableHead>
             <TableRow>
-              <TableCell>සාමාජික අංකය</TableCell>
+              <TableCell
+                sx={{
+                  position: "sticky",
+                  left: 0,
+                  backgroundColor: "background.paper",
+                  zIndex: 3,
+                  borderRight: "2px solid rgba(224, 224, 224, 1)",
+                  fontWeight: "bold",
+                }}
+              >
+                සාමාජික අංකය
+              </TableCell>
               {dateHeaders.map(date => (
-                <TableCell key={date}>{date}</TableCell>
+                <TableCell key={date} sx={{ fontWeight: "bold" }}>{date}</TableCell>
               ))}
             </TableRow>
           </TableHead>
@@ -96,7 +107,17 @@ export default function MeetingAttendance() {
 
               return (
                 <TableRow key={row.memberId} sx={rowStyle}>
-                  <TableCell>{row.memberId}</TableCell>
+                  <TableCell
+                    sx={{
+                      position: "sticky",
+                      left: 0,
+                      backgroundColor: rowStyle.backgroundColor || "background.paper",
+                      zIndex: 1,
+                      borderRight: "2px solid rgba(224, 224, 224, 1)",
+                    }}
+                  >
+                    {row.memberId}
+                  </TableCell>
                   {dateHeaders.map(date => (
                     <TableCell key={date}>{row[date]}</TableCell>
                   ))}
