@@ -60,16 +60,20 @@ export default function MeetingAttendance() {
     meeting => new Date(meeting.date).toISOString().split("T")[0]
   )
 
-  const getAbsentLevel = (row, dateHeaders) => {
-    const last4 = dateHeaders.slice(-4)
-    const last3 = dateHeaders.slice(-3)
-
-    if (last4.length === 4 && last4.every(date => row[date] === "❌")) {
-      return "level2" // Absent for last 4
-    } else if (last3.length === 3 && last3.every(date => row[date] === "❌")) {
-      return "level1" // Absent for last 3
+  const isFinedCell = (row, date, dateHeaders) => {
+    let consecutiveCount = 0
+    for (const d of dateHeaders) {
+      if (row[d] === "❌") {
+        consecutiveCount++
+      } else {
+        consecutiveCount = 0
+      }
+      
+      if (d === date) {
+        return consecutiveCount > 0 && consecutiveCount % 3 === 0
+      }
     }
-    return null
+    return false
   }
 
   return (
@@ -97,30 +101,30 @@ export default function MeetingAttendance() {
           </TableHead>
           <TableBody>
             {rows.map(row => {
-              const absentLevel = getAbsentLevel(row, dateHeaders)
-              const rowStyle =
-                absentLevel === "level2"
-                  ? { backgroundColor: "#ffb3b3" } // Darker red for 4 absents
-                  : absentLevel === "level1"
-                  ? { backgroundColor: "#ffe0e0" } // Light red for 3 absents
-                  : {}
-
               return (
-                <TableRow key={row.memberId} sx={rowStyle}>
+                <TableRow key={row.memberId}>
                   <TableCell
                     sx={{
                       position: "sticky",
                       left: 0,
-                      backgroundColor: rowStyle.backgroundColor || "background.paper",
+                      backgroundColor: "background.paper",
                       zIndex: 1,
                       borderRight: "2px solid rgba(224, 224, 224, 1)",
                     }}
                   >
                     {row.memberId}
                   </TableCell>
-                  {dateHeaders.map(date => (
-                    <TableCell key={date}>{row[date]}</TableCell>
-                  ))}
+                  {dateHeaders.map(date => {
+                    const isFined = isFinedCell(row, date, dateHeaders)
+                    return (
+                      <TableCell 
+                        key={date}
+                        sx={isFined ? { backgroundColor: "#ffcdd2" } : {}}
+                      >
+                        {row[date]}
+                      </TableCell>
+                    )
+                  })}
                 </TableRow>
               )
             })}
